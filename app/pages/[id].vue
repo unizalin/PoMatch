@@ -110,6 +110,15 @@ import { useProfileStore } from '~/stores/profile'
 const store = useProfileStore()
 const profile = computed(() => store.profile)
 
+useSeoMeta({
+  title: () => profile.value ? `${profile.value.name} | PoMatch` : 'PoMatch 數位名片',
+  ogTitle: () => profile.value ? `${profile.value.name} | PoMatch` : 'PoMatch 數位名片',
+  description: () => profile.value ? `我是 ${profile.value.name}，這是我在 PoMatch 的數位名片。我的 MBTI 是 ${profile.value.persona.mbti}，來自 ${profile.value.persona.location}。` : 'PoMatch 數位名片',
+  ogDescription: () => profile.value ? `我是 ${profile.value.name}，這是我在 PoMatch 的數位名片。我的 MBTI 是 ${profile.value.persona.mbti}，來自 ${profile.value.persona.location}。` : 'PoMatch 數位名片',
+  ogImage: () => profile.value?.avatar,
+  twitterCard: 'summary_large_image',
+})
+
 const route = useRoute()
 const userId = route.params.id
 
