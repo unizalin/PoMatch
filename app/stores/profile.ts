@@ -82,8 +82,39 @@ export const useProfileStore = defineStore('profile', {
                 this.profile = { ...this.profile, ...newData }
             }
         },
-        async recordClick(linkId: number) {
-            const link = this.profile.actionLinks.find(l => l.id === linkId)
+        async addLink(link: any) {
+            const client = useSupabaseClient()
+            const user = useSupabaseUser()
+            const { data, error } = await client
+                .from('links')
+                .insert({
+                    profile_id: user.value?.id,
+                    title: link.title,
+                    url: link.url,
+                    icon: link.icon || 'mdi-link-variant',
+                    sort_order: this.profile.actionLinks.length
+                } as never)
+                .select()
+                .single()
+
+            if (data) {
+                this.profile.actionLinks.push(data as any)
+            }
+            return { data, error }
+        },
+        async deleteLink(linkId: string) {
+            const client = useSupabaseClient()
+            const { error } = await client
+                .from('links')
+                .delete()
+                .eq('id', linkId)
+
+            if (!error) {
+                this.profile.actionLinks = this.profile.actionLinks.filter(l => l.id !== linkId)
+            }
+        },
+        async recordClick(linkId: string | number) {
+            const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
             if (link) {
                 link.clicks++
                 this.analytics.totalViews++
