@@ -27,7 +27,7 @@
         <!-- Interactive Stats -->
         <v-row class="mb-8 bg-grey-lighten-4 rounded-xl py-3 mx-2">
           <v-col cols="4" class="pa-1">
-            <div class="text-h6 font-weight-bold text-primary">{{ matchScore }}%</div>
+            <div class="text-h6 font-weight-bold text-primary">{{ displayScore }}%</div>
             <div class="text-caption text-grey">契合度</div>
           </v-col>
           <v-col cols="4" class="pa-1 border-s border-e">
@@ -114,10 +114,22 @@ const route = useRoute()
 const userId = route.params.id
 
 const matchScore = ref(0)
+const displayScore = ref(0)
 
 onMounted(() => {
     if (profile.value && store.calculateMatch) {
         matchScore.value = store.calculateMatch(profile.value.persona)
+        
+        // Count up animation
+        const duration = 1500
+        const start = Date.now()
+        const animate = () => {
+            const elapsed = Date.now() - start
+            const progress = Math.min(elapsed / duration, 1)
+            displayScore.value = Math.floor(progress * matchScore.value)
+            if (progress < 1) requestAnimationFrame(animate)
+        }
+        requestAnimationFrame(animate)
     }
 })
 

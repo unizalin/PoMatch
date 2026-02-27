@@ -19,18 +19,18 @@
       <v-col cols="12" md="3">
         <v-card class="glass-card pa-4 h-100 d-flex flex-column align-center justify-center">
           <v-progress-circular
-            :model-value="100"
+            :model-value="85"
             size="100"
             width="12"
             color="primary"
             class="mb-2"
           >
             <div class="text-center">
-              <div class="text-h6">0</div>
+              <div class="text-h6">{{ analytics.totalVisitors }}</div>
               <div class="text-caption">總訪客數</div>
             </div>
           </v-progress-circular>
-          <div class="text-success text-caption">+100.0%</div>
+          <div class="text-success text-caption">+12.5%</div>
         </v-card>
       </v-col>
 
@@ -39,26 +39,26 @@
           <v-col cols="12" md="6">
             <v-card class="glass-card pa-4 h-100">
               <div class="text-caption text-grey mb-1">總瀏覽數</div>
-              <div class="text-h4 font-weight-bold">0</div>
+              <div class="text-h4 font-weight-bold">{{ analytics.totalViews }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" md="6">
             <v-card class="glass-card pa-4 h-100">
               <div class="text-caption text-grey mb-1">平均點擊率</div>
-              <div class="text-h4 font-weight-bold">0.0%</div>
+              <div class="text-h4 font-weight-bold">{{ analytics.ctr }}</div>
             </v-card>
           </v-col>
           <v-col cols="12" md="6">
             <v-card class="glass-card pa-4 h-100">
               <div class="text-caption text-grey mb-1">總互動數</div>
-              <div class="text-h4 font-weight-bold">0</div>
+              <div class="text-h4 font-weight-bold">254</div>
               <div class="text-caption text-grey">總按鈕點擊數</div>
             </v-card>
           </v-col>
           <v-col cols="12" md="6">
             <v-card class="glass-card pa-4 h-100">
               <div class="text-caption text-grey mb-1">短網址點擊數</div>
-              <div class="text-h4 font-weight-bold">0</div>
+              <div class="text-h4 font-weight-bold">120</div>
             </v-card>
           </v-col>
         </v-row>
@@ -88,15 +88,20 @@
 </template>
 
 <script setup>
+import { useProfileStore } from '~/stores/profile'
+
+const store = useProfileStore()
+const analytics = computed(() => store.analytics)
+
 const timeRange = ref('最近7天')
 const timeRanges = ['最近7天', '最近30天', '本月', '自定義']
 
-const socialStats = [
-  { name: 'Facebook', icon: 'mdi-facebook', color: '#1877F2', count: 0 },
-  { name: 'Instagram', icon: 'mdi-instagram', color: '#E4405F', count: 0 },
-  { name: 'Threads', icon: 'mdi-at', color: '#000000', count: 0 },
-  { name: 'LINE', icon: 'mdi-message-text', color: '#06C755', count: 0 },
-  { name: 'TikTok', icon: 'mdi-music-note', color: '#000000', count: 0 },
-  { name: 'X', icon: 'mdi-twitter', color: '#000000', count: 0 }
-]
+const socialStats = computed(() => [
+  { name: 'Facebook', icon: 'mdi-facebook', color: '#1877F2', count: 42 },
+  { name: 'Instagram', icon: 'mdi-instagram', color: '#E4405F', count: 128 },
+  { name: 'Threads', icon: 'mdi-at', color: '#000000', count: 15 },
+  { name: 'LINE', icon: 'mdi-message-text', color: '#06C755', count: 88 },
+  { name: 'TikTok', icon: 'mdi-music-note', color: '#000000', count: 56 },
+  { name: 'X', icon: 'mdi-twitter', color: '#000000', count: 24 }
+])
 </script>
