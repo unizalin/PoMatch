@@ -19,30 +19,41 @@
               :rules="idRules"
               :loading="isChecking"
               @input="onInput"
-              class="mb-4"
+              class="mb-4 id-input-field"
+              :color="isAvailable === true ? 'success' : (isAvailable === false ? 'error' : 'primary')"
             >
               <template v-slot:append-inner>
-                <v-icon v-if="isAvailable === true" color="success">mdi-check-circle</v-icon>
-                <v-icon v-if="isAvailable === false" color="error">mdi-close-circle</v-icon>
+                <v-fade-transition hide-on-leave>
+                  <v-icon v-if="isAvailable === true" color="success">mdi-check-decagram</v-icon>
+                  <v-icon v-else-if="isAvailable === false" color="error">mdi-alert-circle-outline</v-icon>
+                </v-fade-transition>
               </template>
             </v-text-field>
 
+            <v-expand-transition>
+              <div v-if="isAvailable === false" class="text-caption text-error mb-4 text-left px-2">
+                這個 ID 已經被別人捷足先登了，換一個試試？
+              </div>
+            </v-expand-transition>
+
             <v-btn
               block
-              size="large"
+              size="x-large"
               color="primary"
               :loading="isSubmitting"
               :disabled="!isFormValid || isAvailable !== true"
               type="submit"
-              rounded="lg"
-              class="font-weight-bold mt-4"
+              class="rounded-xl font-weight-bold mt-4 submit-btn gradient-btn"
+              elevation="8"
             >
-              免費註冊
+              開啟我的數位名片
+              <v-icon end>mdi-rocket-launch</v-icon>
             </v-btn>
           </v-form>
 
-          <div class="mt-6 text-caption text-grey">
-            註冊即代表你同意我們的服務條款與隱私權政策
+          <div class="mt-8 text-caption text-grey-darken-1">
+            <v-icon size="small" class="mr-1">mdi-shield-check-outline</v-icon>
+            資安防護已開啟 | 隱私權優先
           </div>
         </v-card>
       </v-col>

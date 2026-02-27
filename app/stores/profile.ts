@@ -39,37 +39,93 @@ export const useProfileStore = defineStore('profile', {
     }),
 
     actions: {
-        updateProfile(newData) {
-            this.profile = { ...this.profile, ...newData }
+        async fetchProfile(username: string) {
+            const client = useSupabaseClient()
+            const { data, error } = await client
+                .from('profiles')
+                .select('*')
+                .eq('username', username)
+                .single()
+
+            if (data) {
+                const profileData = data as any
+                this.profile = {
+                    ...this.profile,
+                    id: profileData.id,
+                    name: profileData.full_name,
+                    description: profileData.description,
+                    avatar: profileData.avatar_url,
+                    persona: {
+                        mbti: profileData.mbti,
+                        zodiac: profileData.zodiac,
+                        location: profileData.location,
+                        tags: profileData.tags
+                    },
+                    interactiveStats: {
+                        matchScore: profileData.match_score,
+                        likes: profileData.likes_count,
+                        followers: profileData.followers_count
+                    }
+                }
+            }
+            return { data, error }
         },
-        addLink(link) {
-            this.profile.actionLinks.push({ ...link, id: Date.now(), clicks: 0 })
+        async updateProfile(newData: any) {
+            const client = useSupabaseClient()
+            const { error } = await client
+                .from('profiles')
+                .update(newData as never)
+                .eq('id', this.profile.id)
+
+            if (!error) {
+                this.profile = { ...this.profile, ...newData }
+            }
         },
-        recordClick(linkId) {
+        async recordClick(linkId: number) {
             const link = this.profile.actionLinks.find(l => l.id === linkId)
             if (link) {
                 link.clicks++
                 this.analytics.totalViews++
             }
         },
-        incrementLike() {
+        async incrementLike() {
             if (this.profile && this.profile.interactiveStats) {
+                const client = useSupabaseClient()
                 this.profile.interactiveStats.likes++
-                // Future: Persist to Supabase here
+
+                // Optimistic update or RPC
+                await client.rpc('increment_likes' as never, { profile_user_id: this.profile.id } as never)
             }
         },
         async checkIdAvailability(id: string) {
-            // Mock check - in future this will query Supabase
-            console.log('Checking availability for:', id)
-            await new Promise(resolve => setTimeout(resolve, 300))
-            return !['admin', 'test', 'root'].includes(id.toLowerCase())
+            const client = useSupabaseClient()
+            const { data, error } = await client
+                .from('profiles')
+                .select('username')
+                .eq('username', id.toLowerCase())
+                .maybeSingle()
+
+            return !data && !error
         },
         async handleRegister(id: string) {
-            // Mock registration
-            console.log('Registering ID:', id)
-            await new Promise(resolve => setTimeout(resolve, 500))
-            this.profile.id = id
-            return true
+            const client = useSupabaseClient()
+            const user = useSupabaseUser()
+
+            const { error } = await client
+                .from('profiles')
+                .insert({
+                    id: user.value?.id,
+                    username: id.toLowerCase(),
+                    full_name: '新用戶',
+                    mbti: 'UNKNOWN',
+                    zodiac: 'UNKNOWN'
+                } as never)
+
+            if (!error) {
+                this.profile.id = id
+                return true
+            }
+            return false
         }
     }
 })
