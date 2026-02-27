@@ -57,6 +57,19 @@ export const useProfileStore = defineStore('profile', {
                 this.profile.interactiveStats.likes++
                 // Future: Persist to Supabase here
             }
+        },
+        async checkIdAvailability(id: string) {
+            // Mock check - in future this will query Supabase
+            console.log('Checking availability for:', id)
+            await new Promise(resolve => setTimeout(resolve, 300))
+            return !['admin', 'test', 'root'].includes(id.toLowerCase())
+        },
+        async handleRegister(id: string) {
+            // Mock registration
+            console.log('Registering ID:', id)
+            await new Promise(resolve => setTimeout(resolve, 500))
+            this.profile.id = id
+            return true
         }
     }
 })
