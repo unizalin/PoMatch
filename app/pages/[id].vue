@@ -27,7 +27,7 @@
         <!-- Interactive Stats -->
         <v-row class="mb-8 bg-grey-lighten-4 rounded-xl py-3 mx-2">
           <v-col cols="4" class="pa-1">
-            <div class="text-h6 font-weight-bold text-primary">{{ profile.interactiveStats.matchScore }}%</div>
+            <div class="text-h6 font-weight-bold text-primary">{{ matchScore }}%</div>
             <div class="text-caption text-grey">契合度</div>
           </v-col>
           <v-col cols="4" class="pa-1 border-s border-e">
@@ -111,7 +111,15 @@ const store = useProfileStore()
 const profile = computed(() => store.profile)
 
 const route = useRoute()
-const userId = route.params.id // Future: Fetch by ID
+const userId = route.params.id
+
+const matchScore = ref(0)
+
+onMounted(() => {
+    if (profile.value && store.calculateMatch) {
+        matchScore.value = store.calculateMatch(profile.value.persona)
+    }
+})
 
 const formatNumber = (num) => {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k'

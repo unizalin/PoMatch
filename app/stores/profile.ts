@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { calculateMatchScore } from '~/utils/matchEngine'
 
 export const useProfileStore = defineStore('profile', {
     state: () => ({
@@ -126,6 +127,10 @@ export const useProfileStore = defineStore('profile', {
                 return true
             }
             return false
+        },
+        calculateMatch(otherPersona: any) {
+            if (!this.profile || !this.profile.persona) return 0
+            return calculateMatchScore(this.profile.persona, otherPersona)
         }
     }
 })
