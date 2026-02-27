@@ -32,6 +32,15 @@
           ></v-text-field>
         </v-card>
 
+        <v-card class="glass-card pa-6 mb-6">
+          <div class="text-subtitle-1 font-weight-bold mb-4">風格主題</div>
+          <v-radio-group v-model="editedProfile.theme" inline>
+            <v-radio label="預設 (Glass)" value="glassmorphism" color="primary"></v-radio>
+            <v-radio label="賽博龐克 (Cyber)" value="cyberpunk" color="secondary"></v-radio>
+            <v-radio label="極簡主義 (Minimal)" value="minimalist" color="grey"></v-radio>
+          </v-radio-group>
+        </v-card>
+
         <v-card class="glass-card pa-6">
           <div class="text-subtitle-1 font-weight-bold mb-4">Persona 特徵 (用於匹配)</div>
           <v-row>

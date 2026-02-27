@@ -1,7 +1,7 @@
 <template>
-  <div class="profile-container d-flex flex-column align-center pa-4">
+  <div :class="['profile-container d-flex flex-column align-center pa-4', `theme-${profile.theme}`]">
     <v-fade-transition>
-      <div v-if="profile" class="glass-card pa-8 w-100 max-width-mobile text-center card-reveal">
+      <div v-if="profile" :class="['glass-card pa-8 w-100 max-width-mobile text-center card-reveal', profile.theme]">
         <!-- Status Indicator -->
         <div class="d-flex justify-end mb-n4">
           <v-chip size="x-small" color="success" variant="flat" class="text-caption font-weight-bold">
@@ -145,6 +145,66 @@ const onLike = () => {
 </script>
 
 <style scoped lang="scss">
+/* Cyberpunk Theme */
+.theme-cyberpunk {
+  background: #0d0221 !important;
+  color: #00ffcc !important;
+  
+  .glass-card.cyberpunk {
+    background: rgba(13, 2, 33, 0.9) !important;
+    border: 2px solid #ff00ff !important;
+    box-shadow: 0 0 20px #ff00ff, inset 0 0 10px #ff00ff !important;
+  }
+  
+  .v-chip {
+    background: #ff00ff !important;
+    color: white !important;
+    box-shadow: 0 0 10px #ff00ff;
+  }
+  
+  .profile-link-btn {
+    background: transparent !important;
+    border: 1px solid #00ffcc !important;
+    color: #00ffcc !important;
+    &:hover {
+      background: #00ffcc !important;
+      color: #0d0221 !important;
+      box-shadow: 0 0 15px #00ffcc !important;
+    }
+  }
+
+  .text-grey-darken-4, .text-grey-darken-3, .text-grey-darken-1, .text-grey {
+    color: #00ffcc !important;
+  }
+}
+
+/* Minimalist Theme */
+.theme-minimalist {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  
+  .glass-card.minimalist {
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .avatar-border {
+    border: 1px solid #eee;
+  }
+  
+  .v-chip {
+    border-radius: 4px;
+    font-weight: 400;
+  }
+  
+  .profile-link-btn {
+    border-radius: 4px !important;
+    border: 1px solid #eee !important;
+    box-shadow: none !important;
+  }
+}
+
 .profile-container {
   min-height: 100vh;
   background: linear-gradient(180deg, #FDFDFD 0%, #F5F7FA 100%);

@@ -8,7 +8,7 @@ export const useProfileStore = defineStore('profile', {
             name: 'Felix un1',
             description: '數位遊民 | 產品設計師',
             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-            theme: 'default',
+            theme: 'glassmorphism',
             persona: {
                 mbti: 'INFP',
                 zodiac: '雙魚座',
