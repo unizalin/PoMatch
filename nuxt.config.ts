@@ -1,10 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  compatibilityDate: '2026-02-28',
   devtools: { enabled: true },
 
   css: [
-    'vuetify/lib/styles/main.sass',
-    '@mdi/font/css/materialdesignicons.min.css',
     '~/assets/css/main.css'
   ],
 
@@ -19,6 +18,15 @@ export default defineNuxtConfig({
 
   supabase: {
     redirect: false // We will handle custom redirection logic for landing/admin/profile
+  },
+
+  // Fix: Prevent SSR conflict where /confirm or /register match [id].vue dynamic route.
+  // These pages handle OAuth callbacks and registration — they must render client-side only.
+  routeRules: {
+    '/confirm': { ssr: false },
+    '/register': { ssr: false },
+    '/login': { ssr: false },
+    '/admin/**': { ssr: false }
   },
 
   app: {

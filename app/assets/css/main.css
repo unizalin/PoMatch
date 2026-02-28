@@ -1,8 +1,13 @@
+@import 'vuetify/styles';
+@import '@mdi/font/css/materialdesignicons.css';
+
 :root {
-  --primary-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  --glass-bg: rgba(255, 255, 255, 0.7);
+  --primary-gradient: linear-gradient(135deg, #44A0F4 0%, #764ba2 100%);
+  --glass-bg: rgba(255, 255, 255, 0.8);
   --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  --radius-xl: 32px;
+  --radius-pill: 9999px;
 }
 
 body {
@@ -30,12 +35,51 @@ body {
   transform: scale(1.02);
 }
 
-/* Page Transitions */
-.page-enter-active,
-.page-leave-active {
-  transition: opacity 0.3s;
+/* Aurora Background Glows */
+.aurora-container {
+  position: relative;
+  overflow: hidden;
 }
-.page-enter-from,
-.page-leave-to {
-  opacity: 0;
+
+.aurora-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.glow-1 {
+  top: -200px;
+  right: -200px;
+  background: #44A0F4;
+}
+
+.glow-2 {
+  bottom: -200px;
+  left: -200px;
+  background: #ff00ff;
+}
+
+.glow-3 {
+  top: 20%;
+  left: -100px;
+  background: #00ffcc;
+}
+
+/* Higher Elevation Utilities */
+.elevated-card {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.03) !important;
+}
+
+.rounded-pill-custom {
+  border-radius: var(--radius-pill) !important;
+}
+
+.border-xl {
+  border-radius: var(--radius-xl) !important;
 }

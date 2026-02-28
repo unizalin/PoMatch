@@ -8,14 +8,66 @@
             <p class="text-body-2 text-grey">選擇一個專屬 ID，開始打造你的數位名片</p>
           </div>
 
-          <v-form @submit.prevent="submitRegistration" v-model="isFormValid">
+          <!-- Case 1: If NOT logged in, show Auth Gate -->
+          <div v-if="!user" class="auth-gate-section">
+            <v-alert
+              type="info"
+              variant="tonal"
+              color="primary"
+              class="mb-6 text-left"
+              rounded="lg"
+            >
+              您需要先建立帳號才能設定專屬 ID
+            </v-alert>
+
+            <v-btn
+              block
+              size="large"
+              color="primary"
+              variant="flat"
+              class="rounded-xl mb-4 font-weight-bold"
+              to="/login"
+            >
+              登入或註冊
+              <v-icon end>mdi-login</v-icon>
+            </v-btn>
+
+            <v-divider class="my-6">或快速登入</v-divider>
+
+            <v-row dense>
+              <v-col cols="6">
+                <v-btn block variant="outlined" color="blue-darken-2" class="rounded-xl">
+                  <v-icon left>mdi-google</v-icon> Google
+                </v-btn>
+              </v-col>
+              <v-col cols="6">
+                <v-btn block variant="outlined" color="success" class="rounded-xl">
+                  <v-icon left>mdi-chat</v-icon> LINE
+                </v-btn>
+              </v-col>
+            </v-row>
+          </div>
+
+          <!-- Case 2: If logged in, show ID selection -->
+          <v-form v-else @submit.prevent="submitRegistration" v-model="isFormValid">
+            <v-alert
+              v-if="user"
+              type="success"
+              variant="tonal"
+              density="compact"
+              class="mb-6 text-left"
+              rounded="lg"
+            >
+              歡迎 {{ user.email }}！請設定您的 ID
+            </v-alert>
+
             <v-text-field
               v-model="customId"
               label="自定義 ID"
               placeholder="例如: yourname"
               variant="outlined"
               density="comfortable"
-              prefix="pomatch.me/"
+              prefix="po-match.vercel.app/"
               :rules="idRules"
               :loading="isChecking"
               @input="onInput"
@@ -36,6 +88,18 @@
               </div>
             </v-expand-transition>
 
+            <v-alert
+              v-if="errorMsg"
+              type="error"
+              variant="tonal"
+              density="compact"
+              class="mb-4 text-left"
+              closable
+              @click:close="errorMsg = ''"
+            >
+              {{ errorMsg }}
+            </v-alert>
+
             <v-btn
               block
               size="x-large"
@@ -46,8 +110,8 @@
               class="rounded-xl font-weight-bold mt-4 submit-btn gradient-btn"
               elevation="8"
             >
-              開啟我的數位名片
-              <v-icon end>mdi-rocket-launch</v-icon>
+              啟用數位名片
+              <v-icon end>mdi-check</v-icon>
             </v-btn>
           </v-form>
 
@@ -66,12 +130,28 @@ import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
 const router = useRouter()
+const user = useSupabaseUser()
 
 const customId = ref('')
 const isFormValid = ref(false)
 const isChecking = ref(false)
 const isAvailable = ref(null)
 const isSubmitting = ref(false)
+const errorMsg = ref('')
+const isRedirecting = ref(false)
+
+// Guard: if user already has a profile, redirect to admin dashboard
+watch(user, async (newUser) => {
+  // Must wait for newUser.id to be available (OAuth can fire before id is set)
+  if (!newUser?.id || isRedirecting.value) return
+  isRedirecting.value = true
+  const hasProfile = await store.hasProfile(newUser.id)
+  if (hasProfile) {
+    router.replace('/admin/links')
+    return
+  }
+  isRedirecting.value = false
+}, { immediate: true })
 
 const idRules = [
   v => !!v || 'ID 為必填項目',
@@ -96,11 +176,15 @@ const submitRegistration = async () => {
   if (!isFormValid.value || isAvailable.value !== true) return
   
   isSubmitting.value = true
-  const success = await store.handleRegister(customId.value)
+  errorMsg.value = ''
+  
+  const { success, error } = await store.handleRegister(customId.value)
   isSubmitting.value = false
 
   if (success) {
-    router.push('/admin/analytics')
+    router.push('/admin/links')
+  } else {
+    errorMsg.value = error || '註冊失敗，請稍後再試。'
   }
 }
 </script>

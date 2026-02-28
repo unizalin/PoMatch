@@ -107,6 +107,18 @@
 <script setup>
 import { useProfileStore } from '~/stores/profile'
 
+// Guard: reserved paths should NOT be handled by this dynamic [id] route
+// This is a safety net in case routeRules SSR config doesn't fully prevent the conflict
+const RESERVED_PATHS = ['confirm', 'login', 'register', 'explore', 'admin']
+definePageMeta({
+  middleware: (to) => {
+    const id = String(to.params.id || '')
+    if (RESERVED_PATHS.includes(id)) {
+      return navigateTo('/' + id, { replace: true })
+    }
+  }
+})
+
 const store = useProfileStore()
 const profile = computed(() => store.profile)
 
@@ -120,12 +132,22 @@ useSeoMeta({
 })
 
 const route = useRoute()
-const userId = route.params.id
+const userId = String(route.params.id || '')
 
 const matchScore = ref(0)
 const displayScore = ref(0)
+const notFound = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
+    // Fetch the public profile by username (the URL slug)
+    if (userId && !store.profile.id) {
+        const { data, error } = await store.fetchProfile(userId)
+        if (error || !data) {
+            notFound.value = true
+            return
+        }
+    }
+
     if (profile.value && store.calculateMatch) {
         matchScore.value = store.calculateMatch(profile.value.persona)
         

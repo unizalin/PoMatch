@@ -1,94 +1,102 @@
 import { defineStore } from 'pinia'
 import { calculateMatchScore } from '~/utils/matchEngine'
+import type { Database, Profile as DbProfile } from '~/types/database.types'
+
+// Helper to map DB profile to Store profile
+const mapDbProfile = (d: DbProfile) => ({
+    id: d.id,
+    username: d.username,
+    name: d.full_name || '未命名',
+    description: d.description || '',
+    avatar: d.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.username}`,
+    persona: {
+        mbti: d.mbti || 'UNKNOWN',
+        zodiac: d.zodiac || 'UNKNOWN',
+        location: d.location || '',
+        tags: d.tags || []
+    },
+    interactiveStats: {
+        matchScore: d.match_score || 0,
+        likes: d.likes_count || 0,
+        followers: d.followers_count || 0
+    }
+})
 
 export const useProfileStore = defineStore('profile', {
     state: () => ({
+        loading: false,
         profile: {
-            id: 'un1',
-            name: 'Felix un1',
-            description: '數位遊民 | 產品設計師',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+            id: '',
+            name: '',
+            description: '',
+            avatar: '',
             theme: 'glassmorphism',
             persona: {
-                mbti: 'INFP',
-                zodiac: '雙魚座',
-                location: '台北, 台灣',
-                tags: ['數位遊民', '產品設計', '攝影']
+                mbti: 'UNKNOWN',
+                zodiac: 'UNKNOWN',
+                location: '',
+                tags: [] as string[]
             },
             interactiveStats: {
-                matchScore: 85,
-                likes: 1240,
-                followers: 450
+                matchScore: 0,
+                likes: 0,
+                followers: 0
             },
-            socialLinks: [
-                { platform: 'facebook', url: '#', icon: 'mdi-facebook', color: '#1877F2' },
-                { platform: 'instagram', url: '#', icon: 'mdi-instagram', color: '#E4405F' },
-                { platform: 'twitter', url: '#', icon: 'mdi-twitter', color: '#000000' }
-            ],
-            actionLinks: [
-                { id: 1, title: '我的作品集', url: 'https://example.com/portfolio', icon: 'mdi-briefcase-outline', clicks: 0 },
-                { id: 2, title: '追蹤我的 YouTube', url: 'https://youtube.com', icon: 'mdi-youtube', clicks: 0 },
-                { id: 3, title: '與我聯繫', url: 'mailto:felix@example.com', icon: 'mdi-email-outline', clicks: 0 }
-            ]
+            socialLinks: [] as any[],
+            actionLinks: [] as any[]
         },
         analytics: {
-            totalVisitors: 1250,
-            totalViews: 3500,
-            ctr: '12.5%',
-            dailyTrend: [100, 150, 120, 200, 180, 250, 230]
-        }
+            totalVisitors: 0,
+            totalViews: 0,
+            ctr: '0%',
+            dailyTrend: [] as number[]
+        },
+        allProfiles: [] as any[]
     }),
 
     actions: {
         async fetchProfile(username: string) {
-            const client = useSupabaseClient()
-            const { data, error } = await client
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .single()
+            this.loading = true
+            const client = useSupabaseClient<Database>()
+            try {
+                const { data, error } = await client
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username)
+                    .single()
 
-            if (data) {
-                const profileData = data as any
-                this.profile = {
-                    ...this.profile,
-                    id: profileData.id,
-                    name: profileData.full_name,
-                    description: profileData.description,
-                    avatar: profileData.avatar_url,
-                    persona: {
-                        mbti: profileData.mbti,
-                        zodiac: profileData.zodiac,
-                        location: profileData.location,
-                        tags: profileData.tags
-                    },
-                    interactiveStats: {
-                        matchScore: profileData.match_score,
-                        likes: profileData.likes_count,
-                        followers: profileData.followers_count
+                if (data) {
+                    this.profile = {
+                        ...this.profile,
+                        ...mapDbProfile(data as any)
                     }
                 }
+                return { data, error }
+            } finally {
+                this.loading = false
             }
-            return { data, error }
         },
-        async updateProfile(newData: any) {
-            const client = useSupabaseClient()
+        async updateProfile(newData: Partial<DbProfile>) {
+            const client = useSupabaseClient<Database>()
             const { error } = await client
                 .from('profiles')
                 .update(newData as never)
                 .eq('id', this.profile.id)
 
             if (!error) {
-                this.profile = { ...this.profile, ...newData }
+                // Fetch fresh data or manual update
+                await this.fetchProfile(this.profile.name) // Or use a better way
             }
         },
         async addLink(link: any) {
-            const client = useSupabaseClient()
+            const client = useSupabaseClient<Database>()
             const user = useSupabaseUser()
+            if (!user.value) return { data: null, error: new Error('Unauthorized') }
+
             const { data, error } = await client
                 .from('links')
                 .insert({
-                    profile_id: user.value?.id,
+                    profile_id: user.value.id,
                     title: link.title,
                     url: link.url,
                     icon: link.icon || 'mdi-link-variant',
@@ -103,15 +111,25 @@ export const useProfileStore = defineStore('profile', {
             return { data, error }
         },
         async deleteLink(linkId: string) {
-            const client = useSupabaseClient()
+            const client = useSupabaseClient<Database>()
             const { error } = await client
                 .from('links')
                 .delete()
                 .eq('id', linkId)
 
             if (!error) {
-                this.profile.actionLinks = this.profile.actionLinks.filter(l => l.id !== linkId)
+                this.profile.actionLinks = this.profile.actionLinks.filter(l => String(l.id) !== String(linkId))
+                // Re-index sort_order after deletion
+                await this.updateLinkSortOrder()
             }
+        },
+        async updateLinkSortOrder() {
+            // TC-L03: Persist sort order to database
+            const client = useSupabaseClient<Database>()
+            const updates = this.profile.actionLinks.map((link: any, index: number) => (
+                client.from('links').update({ sort_order: index } as never).eq('id', link.id)
+            ))
+            await Promise.all(updates)
         },
         async recordClick(linkId: string | number) {
             const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
@@ -122,15 +140,13 @@ export const useProfileStore = defineStore('profile', {
         },
         async incrementLike() {
             if (this.profile && this.profile.interactiveStats) {
-                const client = useSupabaseClient()
+                const client = useSupabaseClient<Database>()
                 this.profile.interactiveStats.likes++
-
-                // Optimistic update or RPC
                 await client.rpc('increment_likes' as never, { profile_user_id: this.profile.id } as never)
             }
         },
         async checkIdAvailability(id: string) {
-            const client = useSupabaseClient()
+            const client = useSupabaseClient<Database>()
             const { data, error } = await client
                 .from('profiles')
                 .select('username')
@@ -139,29 +155,59 @@ export const useProfileStore = defineStore('profile', {
 
             return !data && !error
         },
+        async hasProfile(userId: string) {
+            const client = useSupabaseClient<Database>()
+            const { data } = await client
+                .from('profiles')
+                .select('id')
+                .eq('id', userId)
+                .maybeSingle()
+            return !!data
+        },
         async handleRegister(id: string) {
-            const client = useSupabaseClient()
-            const user = useSupabaseUser()
+            const client = useSupabaseClient<Database>()
+            const { data: { user: authUser } } = await client.auth.getUser()
+
+            if (!authUser) return { success: false, error: '請先登入帳號' }
 
             const { error } = await client
                 .from('profiles')
                 .insert({
-                    id: user.value?.id,
+                    id: authUser.id,
                     username: id.toLowerCase(),
                     full_name: '新用戶',
                     mbti: 'UNKNOWN',
-                    zodiac: 'UNKNOWN'
-                } as never)
+                    zodiac: 'UNKNOWN',
+                    role: 'user'
+                } as any)
 
             if (!error) {
-                this.profile.id = id
-                return true
+                this.profile.id = authUser.id
+                this.profile.name = '新用戶'
+                return { success: true }
             }
-            return false
+            return { success: false, error: error.message }
         },
         calculateMatch(otherPersona: any) {
             if (!this.profile || !this.profile.persona) return 0
             return calculateMatchScore(this.profile.persona, otherPersona)
+        },
+        async fetchAllProfiles() {
+            this.loading = true
+            const client = useSupabaseClient<Database>()
+            try {
+                const { data, error } = await client
+                    .from('profiles')
+                    .select('id, username, full_name, description, avatar_url, mbti, zodiac, location, tags, match_score, likes_count, followers_count')
+                    .limit(20)
+
+                if (data) {
+                    this.allProfiles = data.map(d => mapDbProfile(d as any))
+                }
+                return { data, error }
+            } finally {
+                this.loading = false
+            }
         }
     }
 })
