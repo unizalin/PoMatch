@@ -170,6 +170,49 @@ const topMatches = computed(() => {
     .slice(0, 5)
 })
 
+const allProfiles = computed(() => store.allProfiles)
+const isLoading = computed(() => store.loading)
+
+onMounted(async () => {
+  await store.fetchAllProfiles()
+})
+
+const mbtiStats = computed(() => {
+  const counts: Record<string, number> = {}
+  allProfiles.value.forEach(p => {
+    const m = p.persona?.mbti || 'UNKNOWN'
+    counts[m] = (counts[m] || 0) + 1
+  })
+  
+  const total = allProfiles.value.length || 1
+  return Object.entries(counts)
+    .map(([name, count]) => ({
+      name,
+      percentage: Math.round((count / total) * 100),
+      color: name.includes('I') ? '#6366f1' : '#f43f5e'
+    }))
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 4)
+})
+
+const zodiacStats = computed(() => {
+  const counts: Record<string, number> = {}
+  allProfiles.value.forEach(p => {
+    const z = p.persona?.zodiac || 'UNKNOWN'
+    counts[z] = (counts[z] || 0) + 1
+  })
+  
+  const total = allProfiles.value.length || 1
+  return Object.entries(counts)
+    .map(([name, count]) => ({
+      name,
+      percentage: Math.round((count / total) * 100),
+      icon: 'mdi-star-four-points'
+    }))
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 4)
+})
+
 const scoreRanges = [
   { label: '極高相容 (80-100%)', count: 3, color: '#10B981' },
   { label: '良好互動 (60-79%)', count: 8, color: '#6366F1' },

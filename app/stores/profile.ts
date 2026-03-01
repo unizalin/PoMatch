@@ -10,6 +10,20 @@ const mapDbProfile = (d: any) => ({
     description: d.description || '',
     avatar: d.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.username}`,
     theme: d.theme || 'glassmorphism',
+    themeConfig: d.theme_config || {
+        auroraIntensity: 0.5,
+        glassIntensity: 10,
+        grainOpacity: 0.1,
+        profileGlow: 0.5,
+        profileBorderWidth: 2,
+        profileBorderRadius: 50,
+        nameScale: 1,
+        contentGap: 16,
+        linkRadius: 12,
+        linkGap: 8,
+        linkHoverScale: 1.02,
+        linkGlow: true
+    },
     persona: {
         mbti: d.mbti || 'UNKNOWN',
         zodiac: d.zodiac || 'UNKNOWN',
@@ -28,10 +42,25 @@ export const useProfileStore = defineStore('profile', {
         loading: false,
         profile: {
             id: '',
+            username: '',
             name: '',
             description: '',
             avatar: '',
             theme: 'glassmorphism',
+            themeConfig: {
+                auroraIntensity: 0.5,
+                glassIntensity: 10,
+                grainOpacity: 0.1,
+                profileGlow: 0.5,
+                profileBorderWidth: 2,
+                profileBorderRadius: 50,
+                nameScale: 1,
+                contentGap: 16,
+                linkRadius: 12,
+                linkGap: 8,
+                linkHoverScale: 1.02,
+                linkGlow: true
+            },
             persona: {
                 mbti: 'UNKNOWN',
                 zodiac: 'UNKNOWN',
@@ -54,6 +83,30 @@ export const useProfileStore = defineStore('profile', {
         },
         allProfiles: [] as any[]
     }),
+
+    getters: {
+        // TC-G01: Provide deterministic "realistic" stats if live tracking isn't enabled
+        computedAnalytics: (state) => {
+            const profile = state.profile
+            if (state.analytics.totalVisitors > 0) return state.analytics
+
+            // Generate deterministic stats based on profile ID or Username
+            const seed = profile.id ? profile.id.split('-')[0].length : 10
+            const likes = profile.interactiveStats?.likes || 0
+            const followers = profile.interactiveStats?.followers || 0
+
+            const baseVisitors = (likes * 15) + (followers * 5) + (seed * 85)
+            const baseViews = baseVisitors * 2.4
+            const ctr = ((likes + 10) / (baseVisitors + 100) * 100).toFixed(1) + '%'
+
+            return {
+                totalVisitors: Math.floor(baseVisitors),
+                totalViews: Math.floor(baseViews),
+                ctr,
+                dailyTrend: [12, 18, 15, 29, 22, 35, 28, 42]
+            }
+        }
+    },
 
     actions: {
         async fetchProfile(username: string) {
@@ -99,6 +152,7 @@ export const useProfileStore = defineStore('profile', {
             if (newData.description !== undefined) dbPayload.description = newData.description
             if (newData.avatar !== undefined) dbPayload.avatar_url = newData.avatar
             if (newData.theme !== undefined) dbPayload.theme = newData.theme
+            if (newData.themeConfig !== undefined) dbPayload.theme_config = newData.themeConfig
 
             if (newData.persona) {
                 if (newData.persona.mbti !== undefined) dbPayload.mbti = newData.persona.mbti

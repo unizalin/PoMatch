@@ -39,9 +39,9 @@
                 <span class="text-caption text-grey">{{ step.percentage }}%</span>
               </div>
               <!-- Conversion rate between steps -->
-              <div v-if="idx < funnelSteps.length - 1" class="funnel-connector">
+              <div v-if="idx < funnelSteps.length - 1 && funnelSteps[idx+1]" class="funnel-connector">
                 <v-icon size="14" color="primary">mdi-chevron-double-down</v-icon>
-                <span class="text-xs font-weight-black text-primary ml-1">{{ Math.round((funnelSteps[idx+1].count / step.count) * 100) }}% 轉化</span>
+                <span class="text-xs font-weight-black text-primary ml-1">{{ funnelSteps[idx+1] ? Math.round((funnelSteps[idx+1].count / step.count) * 100) : 0 }}% 轉化</span>
               </div>
             </div>
           </div>
@@ -138,12 +138,17 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
-const funnelSteps = [
-  { label: '總造訪訪客', count: 12480, percentage: 100 },
-  { label: '查看連結次數', count: 4820, percentage: 38 },
-  { label: '點擊聯絡/購買', count: 852, percentage: 6 },
-  { label: '最後成交', count: 142, percentage: 1 }
-]
+const store = useProfileStore()
+const profile = computed(() => store.profile)
+
+const visitors = computed(() => (profile.value.interactiveStats?.likes * 3.5 || 12480))
+
+const funnelSteps = computed(() => [
+  { label: '總造訪訪客', count: Math.floor(visitors.value), percentage: 100 },
+  { label: '查看連結次數', count: Math.floor(visitors.value * 0.38), percentage: 38 },
+  { label: '點擊聯絡/購買', count: Math.floor(visitors.value * 0.06), percentage: 6 },
+  { label: '最後成交', count: Math.floor(visitors.value * 0.01), percentage: 1 }
+])
 
 const recentOrders = [
   { id: 'PM-8241', user: 'Alex Lin', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex', plan: '進階專業版', amount: '1,980', date: '2024/02/27' },

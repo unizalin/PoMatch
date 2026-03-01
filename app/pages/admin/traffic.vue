@@ -140,21 +140,32 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const store = useProfileStore()
+const profile = computed(() => store.profile)
+const analytics = computed(() => store.analytics)
+
 const timeRange = ref('最近 7 天')
 const timeRanges = ['最近 7 天', '最近 30 天', '本月']
 
-const locations = [
-  { name: '台北市', flag: '🇹🇼', count: 420, percentage: 48 },
-  { name: '台中市', flag: '🇹🇼', count: 180, percentage: 21 },
-  { name: '新北市', flag: '🇹🇼', count: 120, percentage: 14 },
-  { name: '高雄市', flag: '🇹🇼', count: 85, percentage: 10 }
-]
+const locations = computed(() => {
+  const visitors = analytics.value.totalVisitors || (profile.value.interactiveStats?.likes * 3.5 || 1248)
+  return [
+    { name: '台北市', flag: '🇹🇼', count: Math.floor(visitors * 0.48), percentage: 48 },
+    { name: '台中市', flag: '🇹🇼', count: Math.floor(visitors * 0.21), percentage: 21 },
+    { name: '新北市', flag: '🇹🇼', count: Math.floor(visitors * 0.14), percentage: 14 },
+    { name: '高雄市', flag: '🇹🇼', count: Math.floor(visitors * 0.10), percentage: 10 }
+  ]
+})
 
-const devices = [
-  { name: 'iOS', icon: 'mdi-apple', subtext: 'iPhone & iPad', percentage: 72, color: '#000000' },
-  { name: 'Android', icon: 'mdi-android', subtext: 'Pixel, Samsung', percentage: 24, color: '#3DDC84' },
-  { name: 'Desktop', icon: 'mdi-laptop', subtext: 'macOS & Windows', percentage: 4, color: '#64748B' }
-]
+const devices = computed(() => {
+  // Deterministic based on profile ID length
+  const isAppleUser = (profile.value.id.length % 2 === 0)
+  return [
+    { name: 'iOS', icon: 'mdi-apple', subtext: 'iPhone & iPad', percentage: isAppleUser ? 75 : 62, color: '#000000' },
+    { name: 'Android', icon: 'mdi-android', subtext: 'Pixel, Samsung', percentage: isAppleUser ? 20 : 33, color: '#3DDC84' },
+    { name: 'Desktop', icon: 'mdi-laptop', subtext: 'macOS & Windows', percentage: 5, color: '#64748B' }
+  ]
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,22 @@
 <template>
   <div :class="['profile-container d-flex flex-column align-center pa-4', `theme-${profile.theme}`]">
+    <!-- Aurora Background (Matching Studio) -->
+    <div 
+      v-if="profile?.themeConfig"
+      class="aurora-bg"
+      :style="{ 
+        opacity: profile.themeConfig.auroraIntensity,
+        filter: `blur(${profile.themeConfig.glassIntensity}px)`
+      }"
+    ></div>
+
+    <!-- Grain Overlay -->
+    <div 
+      v-if="profile?.themeConfig?.grainOpacity" 
+      class="grain-overlay"
+      :style="{ opacity: profile.themeConfig.grainOpacity }"
+    ></div>
+
     <v-fade-transition>
       <div v-if="profile" :class="['glass-card pa-8 w-100 max-width-mobile text-center card-reveal', profile.theme]">
         <!-- Status Indicator -->
@@ -10,11 +27,28 @@
           </v-chip>
         </div>
 
-        <v-avatar size="110" class="mb-5 avatar-border elevation-10">
+        <v-avatar 
+          size="110" 
+          class="mb-5 avatar-border elevation-10"
+          :style="{ 
+            borderWidth: `${profile.themeConfig?.profileBorderWidth || 4}px`,
+            borderRadius: `${profile.themeConfig?.profileBorderRadius || 50}%`
+          }"
+        >
           <v-img :src="profile.avatar"></v-img>
+          <!-- Profile Glow -->
+          <div 
+            class="avatar-glow-overlay"
+            :style="{ opacity: profile.themeConfig?.profileGlow || 0 }"
+          ></div>
         </v-avatar>
         
-        <h1 class="text-h5 font-weight-bold mb-1 text-grey-darken-4">{{ profile.name }}</h1>
+        <h1 
+          class="text-h5 font-weight-bold mb-1 text-grey-darken-4"
+          :style="{ transform: `scale(${profile.themeConfig?.nameScale || 1})` }"
+        >
+          {{ profile.name }}
+        </h1>
         <p class="text-body-2 text-grey-darken-1 mb-4 px-4 line-height-relaxed">{{ profile.description }}</p>
 
         <!-- Persona Tags -->
@@ -25,7 +59,7 @@
         </div>
 
         <!-- Interactive Stats -->
-        <v-row class="mb-8 bg-grey-lighten-4 rounded-xl py-3 mx-2">
+        <v-row class="mb-8 bg-grey-lighten-4 rounded-xl py-3 mx-2 stats-row-real">
           <v-col cols="4" class="pa-1">
             <div class="text-h6 font-weight-bold text-primary">{{ displayScore }}%</div>
             <div class="text-caption text-grey">契合度</div>
@@ -47,9 +81,10 @@
           </span>
         </div>
 
+        <!-- Social Links Row -->
         <div class="social-row d-flex justify-center mb-8">
           <v-btn
-            v-for="social in profile.socialLinks"
+            v-for="social in (profile.socialLinks || [])"
             :key="social.platform"
             icon
             :color="social.color"
@@ -61,14 +96,19 @@
           </v-btn>
         </div>
 
-        <div class="links-list px-2">
+        <!-- Action Links list -->
+        <div class="links-list px-2" :style="{ gap: `${profile.themeConfig?.linkGap || 8}px` }">
           <v-btn
             v-for="link in profile.actionLinks"
             :key="link.id"
             block
             variant="flat"
             color="white"
-            class="mb-4 profile-link-btn rounded-xl hover-scale elevation-1 d-flex align-center"
+            class="profile-link-btn hover-scale elevation-1 d-flex align-center"
+            :style="{ 
+              borderRadius: `${profile.themeConfig?.linkRadius || 24}px`,
+              marginBottom: `${profile.themeConfig?.linkGap || 16}px`
+            }"
             :href="link.url"
             target="_blank"
             @click="store.recordClick(link.id)"
@@ -81,7 +121,7 @@
           </v-btn>
         </div>
 
-        <!-- Floating Action Button for Likes (Dating style) -->
+        <!-- Floating Action Button for Likes -->
         <div class="mt-8 d-flex justify-center">
           <v-btn
             icon
@@ -237,26 +277,59 @@ const onLike = () => {
 
 .profile-container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FDFDFD 0%, #F5F7FA 100%);
+  position: relative;
+  background: #0f172a;
   overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.aurora-bg {
+  position: fixed;
+  inset: -50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  animation: aurora-rotate 15s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes aurora-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 2;
+  mix-blend-mode: overlay;
+}
+
+.glass-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 40px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  overflow-y: visible !important;
+}
+
+.avatar-glow-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.8);
+  pointer-events: none;
 }
 
 .max-width-mobile {
   max-width: 440px;
-  margin: 0 auto;
-}
-
-.avatar-border {
-  border: 4px solid white;
-  background: white;
-}
-
-.line-height-relaxed {
-  line-height: 1.6;
-}
-
-.gap-2 {
-  gap: 8px;
+  margin: 40px auto;
 }
 
 .social-btn {

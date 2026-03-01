@@ -34,28 +34,10 @@
         <v-list-group v-model="groups.content">
           <template v-slot:activator="{ props }">
             <v-list-item v-bind="props" class="group-header"
-              prepend-icon="mdi-view-grid-outline" title="我的內容"></v-list-item>
+              prepend-icon="mdi-view-grid-outline" title="編輯名片"></v-list-item>
           </template>
-          <v-list-item to="/admin/links" title="連結" class="sub-item"
-            prepend-icon="mdi-link-variant" rounded="lg"></v-list-item>
-          <v-list-item to="/admin/profile" title="個人簡介" class="sub-item"
-            prepend-icon="mdi-account-outline" rounded="lg"></v-list-item>
-        </v-list-group>
-
-        <!-- 外觀風格 -->
-        <v-list-group v-model="groups.appearance">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" class="group-header"
-              prepend-icon="mdi-palette-outline" title="外觀風格"></v-list-item>
-          </template>
-          <v-list-item to="/admin/profile" title="模版" class="sub-item"
-            prepend-icon="mdi-view-dashboard-variant-outline" rounded="lg"></v-list-item>
-          <v-list-item class="sub-item" title="背景"
-            prepend-icon="mdi-image-outline" rounded="lg"></v-list-item>
-          <v-list-item class="sub-item" title="簡介樣式"
-            prepend-icon="mdi-format-paint" rounded="lg"></v-list-item>
-          <v-list-item class="sub-item" title="連結樣式"
-            prepend-icon="mdi-format-list-bulleted-type" rounded="lg"></v-list-item>
+          <v-list-item to="/admin" title="進入工作室" class="sub-item"
+            prepend-icon="mdi-creation" rounded="lg"></v-list-item>
         </v-list-group>
 
         <!-- 數據分析 -->
@@ -68,9 +50,9 @@
             prepend-icon="mdi-chart-bar" rounded="lg"></v-list-item>
           <v-list-item to="/admin/match-analytics" title="配對分析" class="sub-item"
             prepend-icon="mdi-heart-multiple-outline" rounded="lg"></v-list-item>
-          <v-list-item class="sub-item" title="訪客流量"
+          <v-list-item to="/admin/traffic" title="訪客流量" class="sub-item"
             prepend-icon="mdi-account-eye-outline" rounded="lg"></v-list-item>
-          <v-list-item class="sub-item" title="來單巨量"
+          <v-list-item to="/admin/orders" title="來單趨勢" class="sub-item"
             prepend-icon="mdi-trending-up" rounded="lg"></v-list-item>
         </v-list-group>
       </v-list>
@@ -95,12 +77,12 @@
     <v-main class="admin-main">
       <div class="admin-layout-row">
         <!-- Center Content Area -->
-        <div class="content-body">
+        <div class="content-body" :class="{ 'pa-0': route.path === '/admin' }">
           <slot />
         </div>
 
-        <!-- Right Phone Preview Panel (desktop only, hidden on pages that have their own preview) -->
-        <div class="preview-panel" v-if="$vuetify.display.lgAndUp && !['/admin/profile', '/admin/links'].includes(route.path)">
+        <!-- Right Phone Preview Panel (Hide on Studio page as it has its own) -->
+        <div class="preview-panel" v-if="$vuetify.display.lgAndUp && !['/admin', '/admin/profile', '/admin/links'].includes(route.path) && !route.path.startsWith('/admin/appearance')">
           <div class="preview-header">
             <span class="text-caption text-grey font-weight-bold preview-label">預覽</span>
             <div class="d-flex align-center" style="gap:8px">
