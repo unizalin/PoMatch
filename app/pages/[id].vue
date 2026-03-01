@@ -139,19 +139,18 @@ const displayScore = ref(0)
 const notFound = ref(false)
 
 onMounted(async () => {
-    // Fetch the public profile by username (the URL slug)
-    if (userId && !store.profile.id) {
-        const { data, error } = await store.fetchProfile(userId)
-        if (error || !data) {
-            notFound.value = true
-            return
-        }
+    // Always fetch fresh data from DB by URL username slug
+    // (don't rely on store.profile which may have stale/different user's data)
+    if (!userId) { notFound.value = true; return }
+
+    const { data, error } = await store.fetchProfile(userId)
+    if (error || !data) {
+        notFound.value = true
+        return
     }
 
     if (profile.value && store.calculateMatch) {
         matchScore.value = store.calculateMatch(profile.value.persona)
-        
-        // Count up animation
         const duration = 1500
         const start = Date.now()
         const animate = () => {

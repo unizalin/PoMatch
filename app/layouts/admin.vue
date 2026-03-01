@@ -99,8 +99,8 @@
           <slot />
         </div>
 
-        <!-- Right Phone Preview Panel (desktop only) -->
-        <div class="preview-panel" v-if="$vuetify.display.lgAndUp">
+        <!-- Right Phone Preview Panel (desktop only, hidden on pages that have their own preview) -->
+        <div class="preview-panel" v-if="$vuetify.display.lgAndUp && !['/admin/profile', '/admin/links'].includes(route.path)">
           <div class="preview-header">
             <span class="text-caption text-grey font-weight-bold preview-label">預覽</span>
             <div class="d-flex align-center" style="gap:8px">
@@ -114,23 +114,59 @@
           <div class="d-flex justify-center pt-8 px-4">
             <div class="phone-frame">
               <div class="phone-screen">
-                <div class="phone-inner text-center pa-4">
-                  <v-avatar size="72" class="mb-3 elevation-4" style="border:3px solid rgba(255,255,255,0.2)">
-                    <v-img :src="previewProfile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`"></v-img>
-                  </v-avatar>
-                  <div class="text-body-2 font-weight-black text-white mb-1">{{ previewProfile.name || userEmail }}</div>
-                  <div class="text-caption mb-4" style="color:rgba(255,255,255,0.5)">{{ previewProfile.description || '點擊個人簡介來編輯' }}</div>
-
-                  <div v-if="previewLinks.length">
-                    <div v-for="link in previewLinks" :key="link.id"
-                      class="phone-link-pill mb-2 py-2 px-3 d-flex align-center rounded-pill">
-                      <v-icon size="12" class="mr-2">{{ link.icon || 'mdi-link-variant' }}</v-icon>
-                      <span class="text-truncate" style="flex:1;font-size:11px;font-weight:600">{{ link.title }}</span>
+                <!-- Phone top notch -->
+                <div class="phone-notch"></div>
+                
+                <div class="phone-inner">
+                  <!-- Background gradient layer -->
+                  <div class="phone-bg-gradient"></div>
+                  
+                  <!-- Profile card -->
+                  <div class="phone-card">
+                    <!-- Online indicator -->
+                    <div class="d-flex justify-end mb-1">
+                      <div class="phone-online-badge">● 在線上</div>
                     </div>
-                  </div>
-                  <div v-else class="pt-6">
-                    <v-icon size="48" color="grey" class="mb-2">mdi-link-plus</v-icon>
-                    <div class="text-caption" style="color:rgba(255,255,255,0.4)">從上方新增你的第一個連結</div>
+                    
+                    <!-- Avatar -->
+                    <div class="d-flex justify-center mb-2">
+                      <div class="phone-avatar-wrap">
+                        <img
+                          :src="previewProfile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`"
+                          class="phone-avatar-img"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="phone-name">{{ previewProfile.name || '@' + userEmail }}</div>
+                    <div class="phone-desc">{{ previewProfile.description || '點擊個人簡介來編輯描述' }}</div>
+
+                    <!-- Persona chips -->
+                    <div class="d-flex justify-center flex-wrap" style="gap:4px;margin-bottom:10px">
+                      <span v-if="previewProfile.persona?.mbti && previewProfile.persona.mbti !== 'UNKNOWN'" class="phone-chip chip-blue">
+                        {{ previewProfile.persona.mbti }}
+                      </span>
+                      <span v-if="previewProfile.persona?.zodiac && previewProfile.persona.zodiac !== 'UNKNOWN'" class="phone-chip chip-purple">
+                        {{ previewProfile.persona.zodiac }}
+                      </span>
+                      <span v-for="tag in (previewProfile.persona?.tags || []).slice(0, 2)" :key="tag" class="phone-chip chip-grey">
+                        {{ tag }}
+                      </span>
+                    </div>
+
+                    <!-- Links -->
+                    <div v-if="previewLinks.length">
+                      <div v-for="link in previewLinks" :key="link.id" class="phone-link-item">
+                        <v-icon size="12" style="opacity:0.7;flex-shrink:0">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                        <span class="phone-link-title">{{ link.title }}</span>
+                        <v-icon size="10" style="opacity:0.4;flex-shrink:0">mdi-chevron-right</v-icon>
+                      </div>
+                    </div>
+                    <div v-else class="phone-empty">
+                      <v-icon size="36" style="color:rgba(255,255,255,0.2)" class="mb-1">mdi-link-plus</v-icon>
+                      <div style="font-size:9px;color:rgba(255,255,255,0.35)">從左側新增你的第一個連結</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -159,6 +195,7 @@ const router = useRouter()
 const groups = ref({ content: true, appearance: false, analytics: false })
 const store = useProfileStore()
 
+const route = useRoute()
 const userEmail = computed(() => user.value?.email?.split('@')[0] || 'user')
 const userInitial = computed(() => userEmail.value.charAt(0).toUpperCase())
 const profileUrl = computed(() => `https://po-match.vercel.app/${userEmail.value}`)
@@ -289,34 +326,156 @@ const handleLogout = async () => {
 /* Phone frame */
 .phone-frame {
   width: 200px;
-  height: 400px;
-  background: #111827;
-  border-radius: 36px;
-  border: 7px solid #111827;
+  height: 420px;
+  background: #0f0f1a;
+  border-radius: 40px;
+  border: 6px solid #1a1a2e;
   box-shadow:
-    0 0 0 1px #d1d5db,
-    0 20px 50px -10px rgba(0, 0, 0, 0.3);
+    0 0 0 1px rgba(255,255,255,0.08),
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 24px 64px -12px rgba(0, 0, 0, 0.5);
   overflow: hidden;
+  position: relative;
+}
+
+.phone-notch {
+  width: 60px;
+  height: 14px;
+  background: #0f0f1a;
+  border-radius: 0 0 12px 12px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
 }
 
 .phone-screen {
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border-radius: 30px;
-  overflow-y: auto;
+  overflow: hidden;
+  border-radius: 34px;
 }
 
 .phone-inner {
-  min-height: 100%;
+  height: 100%;
+  position: relative;
+  overflow-y: auto;
 }
 
-.phone-link-pill {
-  background: rgba(255, 255, 255, 0.12);
+.phone-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at top, rgba(99, 102, 241, 0.3) 0%, transparent 60%),
+    linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+}
+
+.phone-card {
+  position: relative;
+  z-index: 1;
+  padding: 8px 12px 16px;
+  text-align: center;
+}
+
+.phone-online-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 7px;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 20px;
+  padding: 2px 6px;
+  letter-spacing: 0.03em;
+}
+
+.phone-avatar-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0,0,0,0.4);
+  overflow: hidden;
+  background: rgba(255,255,255,0.1);
+}
+
+.phone-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.phone-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+}
+
+.phone-desc {
+  font-size: 8.5px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 8px;
+  line-height: 1.4;
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.phone-chip {
+  display: inline-block;
+  font-size: 7.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.chip-blue {
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.chip-purple {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.chip-grey {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.phone-link-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
   color: white;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+}
+
+.phone-link-title {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 600;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-empty {
+  padding-top: 20px;
+  text-align: center;
 }
 
 .preview-footer {

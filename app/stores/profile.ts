@@ -3,12 +3,13 @@ import { calculateMatchScore } from '~/utils/matchEngine'
 import type { Database, Profile as DbProfile } from '~/types/database.types'
 
 // Helper to map DB profile to Store profile
-const mapDbProfile = (d: DbProfile) => ({
+const mapDbProfile = (d: any) => ({
     id: d.id,
     username: d.username,
     name: d.full_name || '未命名',
     description: d.description || '',
     avatar: d.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.username}`,
+    theme: d.theme || 'glassmorphism',
     persona: {
         mbti: d.mbti || 'UNKNOWN',
         zodiac: d.zodiac || 'UNKNOWN',
@@ -63,7 +64,7 @@ export const useProfileStore = defineStore('profile', {
                     .from('profiles')
                     .select('*')
                     .eq('username', username)
-                    .single()
+                    .maybeSingle()
 
                 if (data) {
                     this.profile = {
@@ -76,17 +77,46 @@ export const useProfileStore = defineStore('profile', {
                 this.loading = false
             }
         },
-        async updateProfile(newData: Partial<DbProfile>) {
+        async updateProfile(newData: any) {
             const client = useSupabaseClient<Database>()
-            const { error } = await client
-                .from('profiles')
-                .update(newData as never)
-                .eq('id', this.profile.id)
+
+            // Use getUser() directly for maximum reliability in async actions
+            const { data: { user }, error: authError } = await client.auth.getUser()
+            const userId = user?.id
+
+            if (authError || !userId) {
+                console.error('[ProfileStore] updateProfile failed: No session', authError)
+                return { error: authError || new Error('User session not found') }
+            }
+
+            const dbPayload: any = {
+                id: userId,
+                username: user.email?.split('@')[0] || 'user',
+                updated_at: new Date().toISOString()
+            }
+
+            if (newData.name !== undefined) dbPayload.full_name = newData.name
+            if (newData.description !== undefined) dbPayload.description = newData.description
+            if (newData.avatar !== undefined) dbPayload.avatar_url = newData.avatar
+            if (newData.theme !== undefined) dbPayload.theme = newData.theme
+
+            if (newData.persona) {
+                if (newData.persona.mbti !== undefined) dbPayload.mbti = newData.persona.mbti
+                if (newData.persona.zodiac !== undefined) dbPayload.zodiac = newData.persona.zodiac
+                if (newData.persona.location !== undefined) dbPayload.location = newData.persona.location
+                if (newData.persona.tags !== undefined) dbPayload.tags = newData.persona.tags
+            }
+
+            console.log('[ProfileStore] Upserting payload:', dbPayload)
+            const { error } = await client.from('profiles').upsert(dbPayload)
 
             if (!error) {
-                // Fetch fresh data or manual update
-                await this.fetchProfile(this.profile.name) // Or use a better way
+                await this.fetchProfile(dbPayload.username)
+            } else {
+                console.error('[ProfileStore] Update failed:', error)
             }
+
+            return { error }
         },
         async addLink(link: any) {
             const client = useSupabaseClient<Database>()

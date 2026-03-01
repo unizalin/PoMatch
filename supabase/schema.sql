@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   likes_count INTEGER DEFAULT 0,
   followers_count INTEGER DEFAULT 0,
   role TEXT DEFAULT 'user' NOT NULL, -- 'user' or 'admin'
+  theme TEXT DEFAULT 'glassmorphism' NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
