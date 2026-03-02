@@ -82,7 +82,7 @@
         </div>
 
         <!-- Right Phone Preview Panel (Hide on Studio page as it has its own) -->
-        <div class="preview-panel" v-if="$vuetify.display.lgAndUp && !['/admin', '/admin/profile', '/admin/links'].includes(route.path) && !route.path.startsWith('/admin/appearance')">
+        <div class="preview-panel" v-if="$vuetify.display.lgAndUp && route.path !== '/admin' && !route.path.startsWith('/admin/appearance')">
           <div class="preview-header">
             <span class="text-caption text-grey font-weight-bold preview-label">預覽</span>
             <div class="d-flex align-center" style="gap:8px">

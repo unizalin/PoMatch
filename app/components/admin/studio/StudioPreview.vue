@@ -87,32 +87,62 @@
                 </v-btn>
               </div>
 
-              <!-- Action Links list -->
-              <div class="phone-links-section w-100">
-                <div 
-                  v-for="link in profile.actionLinks" 
-                  :key="link.id" 
-                  class="phone-link-btn"
-                  :style="{ 
-                    borderRadius: `${profile.themeConfig?.linkRadius || 12}px`,
-                    marginBottom: `${profile.themeConfig?.linkGap || 8}px`
-                  }"
-                >
-                  <v-icon size="12" class="mr-2 opacity-70">{{ link.icon || 'mdi-link-variant' }}</v-icon>
-                  <span class="text-truncate flex-grow-1 text-left">{{ link.title }}</span>
+            <!-- Action Links (Multi-Layout Support) -->
+            <div 
+              :class="['phone-links-container w-100', `layout-${profile.themeConfig?.linkLayout || 'list'}`]"
+              :style="{ gap: `${profile.themeConfig?.linkGap || 8}px` }"
+            >
+              <div 
+                v-for="link in profile.actionLinks" 
+                :key="link.id" 
+                class="phone-link-btn"
+                :class="[
+                  link.metadata?.animation ? `anim-${link.metadata.animation}` : '',
+                  profile.themeConfig?.linkLayout === 'grid' ? 'grid-item' : '',
+                  (profile.themeConfig?.linkLayout === 'grid' && link.metadata?.gridSpan === 'full') ? 'grid-full' : ''
+                ]"
+                :style="getLinkStyle(link)"
+              >
+                <!-- List Layout Content -->
+                <template v-if="(profile.themeConfig?.linkLayout || 'list') === 'list'">
+                  <div class="link-circle-mock mr-3" :style="{ background: link.metadata?.color || '' }">
+                    <v-icon size="12" color="white">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                  </div>
+                  <span class="text-truncate flex-grow-1 text-left font-weight-bold" style="font-size: 11px">{{ link.title }}</span>
                   <v-icon size="10" color="grey-lighten-2">mdi-chevron-right</v-icon>
-                </div>
-              </div>
+                </template>
 
-              <!-- Branded Footer -->
-              <div class="mt-8 mb-2">
-                <v-chip variant="outlined" color="grey-lighten-1" size="x-small" class="px-3 zoom-80 branding-chip">
-                  POWERED BY POMATCH
-                </v-chip>
+                <!-- Grid Layout Content -->
+                <template v-else>
+                  <div class="grid-preview-content d-flex align-center flex-column justify-center w-100 h-100">
+                    <v-icon :size="link.metadata?.gridSpan === 'full' ? 16 : 20" :color="link.metadata?.color || 'primary'" :class="link.metadata?.gridSpan === 'full' ? 'mr-2' : 'mb-1'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                    <div class="text-tiny font-weight-black text-truncate px-1" :class="link.metadata?.gridSpan === 'full' ? 'text-left' : 'text-center'">{{ link.title }}</div>
+                  </div>
+                </template>
               </div>
+            </div>
+
+            <!-- Floating Action Button for Likes (Mock) -->
+            <div class="mt-6 d-flex justify-center">
+              <v-btn
+                icon
+                color="red-lighten-4"
+                class="like-btn-mock"
+                size="small"
+              >
+                <v-icon color="red" size="14">mdi-heart</v-icon>
+              </v-btn>
+            </div>
+
+            <!-- Branded Footer (Internal styled chip) -->
+            <div class="mt-8 mb-2">
+              <v-chip variant="outlined" color="grey-lighten-1" size="x-small" class="px-3 branding-chip-real font-weight-black">
+                POWERED BY POMATCH
+              </v-chip>
             </div>
           </div>
         </div>
+      </div>
 
         <!-- Grain Overlay -->
         <div 
@@ -130,6 +160,24 @@ import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
 const profile = computed(() => store.profile)
+
+const getLinkStyle = (link: any) => {
+  const isGrid = profile.value.themeConfig?.linkLayout === 'grid'
+  const style: any = {
+    borderRadius: `${profile.value.themeConfig?.linkRadius || 12}px`,
+    marginBottom: isGrid ? '0' : `${profile.value.themeConfig?.linkGap || 8}px`
+  }
+  
+  if (link.metadata?.color) {
+    if (isGrid) {
+      style.border = `1.5px solid ${link.metadata.color}22`
+    } else {
+      style.borderLeft = `3px solid ${link.metadata.color}`
+    }
+  }
+
+  return style
+}
 </script>
 
 <style scoped lang="scss">
@@ -156,15 +204,15 @@ const profile = computed(() => store.profile)
 }
 
 .phone-notch {
-  width: 100px;
-  height: 20px;
-  background: #1a1a2e;
-  border-radius: 0 0 15px 15px;
+  width: 90px;
+  height: 22px;
+  background: #000;
+  border-radius: 0 0 18px 18px;
   position: absolute;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
+  z-index: 20;
 }
 
 .phone-aurora {
@@ -184,108 +232,161 @@ const profile = computed(() => store.profile)
   flex: 1;
   position: relative;
   z-index: 5;
-  padding: 30px 0 20px;
+  padding: 40px 16px 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(2px);
+  align-items: center;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
-.glass-card-mockup {
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(12px) !important;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+.glass-card-mockup-premium {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  
-  &.cyberpunk {
-    background: rgba(13, 2, 33, 0.9) !important;
-    border: 2px solid #ff00ff !important;
-    box-shadow: 0 0 15px #ff00ff, inset 0 0 5px #ff00ff !important;
-    
-    .phone-name, .phone-desc, .text-grey, .text-grey-darken-3 {
-      color: #00ffcc !important;
-    }
-    
-    .v-chip {
-      background: #ff00ff !important;
-      color: white !important;
-      box-shadow: 0 0 8px #ff00ff;
-    }
-
-    .stats-row {
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(0, 255, 204, 0.2);
-    }
-
-    .phone-link-btn {
-      background: transparent !important;
-      border: 1px solid #00ffcc !important;
-      color: #00ffcc !important;
-    }
-
-    .branding-chip {
-      border-color: rgba(0, 255, 204, 0.3) !important;
-      color: #00ffcc !important;
-    }
-  }
-
-  &.minimalist {
-    background: white !important;
-    box-shadow: none !important;
-    border: none !important;
-    .phone-avatar-border { border: 1px solid #eee; }
-  }
+  width: 100%;
 }
 
-.phone-avatar-border {
+.phone-avatar-border-premium {
   border: 3px solid white;
   background: white;
 }
 
-.phone-name { 
-  font-size: 16px; 
-  font-weight: 800; 
-  color: #1a1a1a; 
-  margin: 8px 0 4px; 
-  transition: all 0.3s; 
+.phone-name-premium { 
+  font-size: 18px; 
+  font-weight: 900; 
+  color: #0f172a; 
+  margin: 4px 0; 
+  letter-spacing: -0.05em;
 }
 
-.phone-desc { 
-  font-size: 10px; 
-  color: #4b5563; 
-  padding: 0 10px;
-  line-height: 1.4; 
+.phone-desc-premium { 
+  font-size: 11px; 
+  color: #475569; 
+  padding: 0 8px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
-.stats-row {
-  .text-tiny { font-size: 8px; font-weight: 500; }
-  .text-caption { font-size: 10px !important; }
+.stats-row-premium {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  .text-tiny { font-size: 8px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+  .text-caption { font-size: 11px !important; }
 }
 
-.social-btn-mock {
-  width: 28px !important;
-  height: 28px !important;
+.social-btn-mock-premium {
+  width: 32px !important;
+  height: 32px !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+}
+
+.phone-links-container {
+  display: flex;
+  flex-direction: column;
+  &.layout-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-flow: dense;
+    gap: 10px !important;
+  }
 }
 
 .phone-link-btn {
   width: 100%; 
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: white; 
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  color: #374151; 
-  font-size: 11px; 
-  font-weight: 700;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  color: #1e293b; 
   display: flex; 
   align-items: center; 
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+  margin-bottom: 8px;
+  position: relative;
+
+  &.grid-item {
+    flex-direction: column;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 8px 4px;
+    margin-bottom: 0;
+    
+    &.grid-full {
+      grid-column: span 2;
+      aspect-ratio: auto;
+      min-height: 44px;
+      padding: 8px 12px;
+      
+      .grid-preview-content {
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+      }
+    }
+  }
+  
+  .link-circle-mock {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Animations for Preview */
+  &.anim-glow { animation: preview-link-glow 2s infinite ease-in-out; }
+  &.anim-bounce { animation: preview-link-bounce 3s infinite ease-in-out; }
 }
 
-.zoom-70 { transform: scale(0.7); transform-origin: right center; }
-.zoom-80 { transform: scale(0.8); }
-.zoom-85 { transform: scale(0.85); }
+@keyframes preview-link-glow {
+  0%, 100% { box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+  50% { box-shadow: 0 0 12px rgba(99, 102, 241, 0.4); }
+}
+
+@keyframes preview-link-bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-4px); }
+  60% { transform: translateY(-2px); }
+}
+
+.heartbeat-mock {
+  animation: HeartbeatAnimation 2s infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.branding-chip-real {
+  letter-spacing: 2px !important;
+  font-size: 8px !important;
+  color: #94a3b8 !important;
+}
+
+.pulse-indicator {
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+  animation: PulseIndicatorAnim 2s infinite;
+}
+
+@keyframes PulseIndicatorAnim {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+}
+
+.scale-75 { transform: scale(0.75); transform-origin: right top; }
+.scale-90 { transform: scale(0.9); }
+
+.theme-cyberpunk {
+  .glass-card-mockup-premium {
+    background: rgba(13, 2, 33, 0.8) !important;
+    border: 2px solid #ff00ff !important;
+  }
+  .phone-name-premium, .phone-desc-premium, .text-grey, .text-slate-800 { color: #00ffcc !important; }
+}
 
 .phone-grain-overlay {
   position: absolute; inset: 0; pointer-events: none;
@@ -293,5 +394,5 @@ const profile = computed(() => store.profile)
   z-index: 100; mix-blend-mode: overlay;
 }
 
-.gap-2 { gap: 8px; }
+  .gap-2 { gap: 8px; }
 </style>

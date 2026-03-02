@@ -17,6 +17,11 @@
       </v-btn>
     </div>
 
+    <!-- [NEW] Layout Picker -->
+    <div class="section-card mb-6">
+      <LinkLayoutPicker v-model="profile.themeConfig.linkLayout" @update:modelValue="saveLayout" />
+    </div>
+
     <!-- Links List Card -->
     <div class="section-card">
       <div class="section-label">
@@ -60,6 +65,7 @@
             </div>
 
             <div class="lc-actions">
+              <v-btn icon="mdi-palette-outline" variant="text" color="indigo" size="small" class="mr-1" @click="openStyleDialog(link)"></v-btn>
               <v-btn icon="mdi-delete-outline" variant="text" color="error" size="small" @click="confirmDelete(link)"></v-btn>
             </div>
           </div>
@@ -109,20 +115,28 @@
       <v-icon class="mr-2" size="18">{{ snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
       {{ snackbarText }}
     </v-snackbar>
+
+    <!-- [NEW] Style Dialog -->
+    <LinkStyleDialog v-model="styleDialog" :link="selectedLink" @saved="showMsg('樣式已更新', 'success')" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useProfileStore } from '~/stores/profile'
+import LinkLayoutPicker from './LinkLayoutPicker.vue'
+import LinkStyleDialog from './LinkStyleDialog.vue'
 
 const store = useProfileStore()
+const profile = computed(() => store.profile)
 const links = computed(() => store.profile.actionLinks || [])
 
 const dialog = ref(false)
+const styleDialog = ref(false)
+const selectedLink = ref<any>(null)
 const isAdding = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+const snackbarIcon = ref('mdi-check-circle')
 
 const newLink = ref({ title: '', url: '', icon: 'mdi-link-variant' })
 const iconOptions = [
@@ -141,6 +155,16 @@ const openDialog = () => {
   dialog.value = true
 }
 
+const openStyleDialog = (link: any) => {
+  selectedLink.value = link
+  styleDialog.value = true
+}
+
+const saveLayout = async () => {
+  await store.updateProfile({ themeConfig: profile.value.themeConfig })
+  showMsg('佈局已更新', 'success')
+}
+
 const handleAdd = async () => {
   if (!newLink.value.title || !newLink.value.url) return
   isAdding.value = true
@@ -150,7 +174,8 @@ const handleAdd = async () => {
     dialog.value = false
     showMsg('連結已成功新增！', 'success')
   } else {
-    showMsg('新增失敗，請確認網址格式', 'error')
+    console.error('Add link failed:', error)
+    showMsg(error.message || '新增失敗，請檢查網路連線', 'error')
   }
 }
 
@@ -170,7 +195,7 @@ const moveLink = async (index: number, delta: number) => {
   items.splice(newIndex, 0, item)
   
   store.profile.actionLinks = items
-  await store.updateLinkSortOrder()
+  await store.debouncedUpdateLinkSortOrder()
   showMsg('順序已更新', 'success')
 }
 

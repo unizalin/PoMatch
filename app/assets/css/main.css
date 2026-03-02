@@ -2,12 +2,13 @@
 @import '@mdi/font/css/materialdesignicons.css';
 
 :root {
-  --primary-gradient: linear-gradient(135deg, #44A0F4 0%, #764ba2 100%);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-  --radius-xl: 32px;
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+  --radius-xl: 40px;
   --radius-pill: 9999px;
+  --premium-glow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
 
 body {
@@ -28,11 +29,17 @@ body {
 }
 
 .hover-scale {
-  transition: transform 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .hover-scale:hover {
-  transform: scale(1.02);
+  transform: translateY(-4px) scale(1.02);
+  filter: brightness(1.05);
+}
+
+.premium-blur {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 /* Aurora Background Glows */

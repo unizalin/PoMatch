@@ -37,6 +37,10 @@ const mapDbProfile = (d: any) => ({
     }
 })
 
+// Private timers for debouncing
+let updateProfileTimer: any = null
+let updateSortOrderTimer: any = null
+
 export const useProfileStore = defineStore('profile', {
     state: () => ({
         loading: false,
@@ -59,7 +63,8 @@ export const useProfileStore = defineStore('profile', {
                 linkRadius: 12,
                 linkGap: 8,
                 linkHoverScale: 1.02,
-                linkGlow: true
+                linkGlow: true,
+                linkLayout: 'list'
             },
             persona: {
                 mbti: 'UNKNOWN',
@@ -85,20 +90,15 @@ export const useProfileStore = defineStore('profile', {
     }),
 
     getters: {
-        // TC-G01: Provide deterministic "realistic" stats if live tracking isn't enabled
         computedAnalytics: (state) => {
             const profile = state.profile
             if (state.analytics.totalVisitors > 0) return state.analytics
-
-            // Generate deterministic stats based on profile ID or Username
             const seed = profile.id ? profile.id.split('-')[0].length : 10
             const likes = profile.interactiveStats?.likes || 0
             const followers = profile.interactiveStats?.followers || 0
-
             const baseVisitors = (likes * 15) + (followers * 5) + (seed * 85)
             const baseViews = baseVisitors * 2.4
             const ctr = ((likes + 10) / (baseVisitors + 100) * 100).toFixed(1) + '%'
-
             return {
                 totalVisitors: Math.floor(baseVisitors),
                 totalViews: Math.floor(baseViews),
@@ -115,14 +115,16 @@ export const useProfileStore = defineStore('profile', {
             try {
                 const { data, error } = await client
                     .from('profiles')
-                    .select('*')
+                    .select('*, links(*)')
                     .eq('username', username)
+                    .order('sort_order', { foreignTable: 'links', ascending: true })
                     .maybeSingle()
 
                 if (data) {
                     this.profile = {
                         ...this.profile,
-                        ...mapDbProfile(data as any)
+                        ...mapDbProfile(data as any),
+                        actionLinks: data.links || []
                     }
                 }
                 return { data, error }
@@ -132,19 +134,14 @@ export const useProfileStore = defineStore('profile', {
         },
         async updateProfile(newData: any) {
             const client = useSupabaseClient<Database>()
-
-            // Use getUser() directly for maximum reliability in async actions
             const { data: { user }, error: authError } = await client.auth.getUser()
             const userId = user?.id
 
-            if (authError || !userId) {
-                console.error('[ProfileStore] updateProfile failed: No session', authError)
-                return { error: authError || new Error('User session not found') }
-            }
+            if (authError || !userId) return { error: authError || new Error('User session not found') }
 
             const dbPayload: any = {
                 id: userId,
-                username: user.email?.split('@')[0] || 'user',
+                username: this.profile.username || user.email?.split('@')[0],
                 updated_at: new Date().toISOString()
             }
 
@@ -161,59 +158,74 @@ export const useProfileStore = defineStore('profile', {
                 if (newData.persona.tags !== undefined) dbPayload.tags = newData.persona.tags
             }
 
-            console.log('[ProfileStore] Upserting payload:', dbPayload)
             const { error } = await client.from('profiles').upsert(dbPayload)
-
-            if (!error) {
-                await this.fetchProfile(dbPayload.username)
-            } else {
-                console.error('[ProfileStore] Update failed:', error)
-            }
-
             return { error }
+        },
+        async debouncedUpdateProfile(newData: any) {
+            if (newData.name !== undefined) this.profile.name = newData.name
+            if (newData.description !== undefined) this.profile.description = newData.description
+            if (newData.themeConfig !== undefined) this.profile.themeConfig = { ...this.profile.themeConfig, ...newData.themeConfig }
+            if (newData.persona !== undefined) this.profile.persona = { ...this.profile.persona, ...newData.persona }
+
+            if (updateProfileTimer) clearTimeout(updateProfileTimer)
+            updateProfileTimer = setTimeout(async () => {
+                await this.updateProfile(newData)
+                updateProfileTimer = null
+            }, 800)
         },
         async addLink(link: any) {
             const client = useSupabaseClient<Database>()
-            const user = useSupabaseUser()
-            if (!user.value) return { data: null, error: new Error('Unauthorized') }
+            const { data: { session } } = await client.auth.getSession()
+            const userId = session?.user?.id
+
+            if (!userId) return { data: null, error: new Error('Unauthorized') }
 
             const { data, error } = await client
                 .from('links')
                 .insert({
-                    profile_id: user.value.id,
+                    profile_id: userId,
                     title: link.title,
                     url: link.url,
                     icon: link.icon || 'mdi-link-variant',
-                    sort_order: this.profile.actionLinks.length
-                } as never)
+                    sort_order: this.profile.actionLinks.length,
+                    metadata: link.metadata || {}
+                } as any)
                 .select()
                 .single()
 
-            if (data) {
-                this.profile.actionLinks.push(data as any)
-            }
+            if (data) this.profile.actionLinks.push(data as any)
             return { data, error }
+        },
+        async updateLinkMetadata(linkId: string | number, metadata: any) {
+            const client = useSupabaseClient<Database>()
+            const { error } = await client.from('links').update({ metadata } as any).eq('id', linkId)
+            if (!error) {
+                const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
+                if (link) link.metadata = { ...link.metadata, ...metadata }
+            }
+            return { error }
         },
         async deleteLink(linkId: string) {
             const client = useSupabaseClient<Database>()
-            const { error } = await client
-                .from('links')
-                .delete()
-                .eq('id', linkId)
-
+            const { error } = await client.from('links').delete().eq('id', linkId)
             if (!error) {
                 this.profile.actionLinks = this.profile.actionLinks.filter(l => String(l.id) !== String(linkId))
-                // Re-index sort_order after deletion
                 await this.updateLinkSortOrder()
             }
         },
         async updateLinkSortOrder() {
-            // TC-L03: Persist sort order to database
             const client = useSupabaseClient<Database>()
             const updates = this.profile.actionLinks.map((link: any, index: number) => (
                 client.from('links').update({ sort_order: index } as never).eq('id', link.id)
             ))
             await Promise.all(updates)
+        },
+        async debouncedUpdateLinkSortOrder() {
+            if (updateSortOrderTimer) clearTimeout(updateSortOrderTimer)
+            updateSortOrderTimer = setTimeout(async () => {
+                await this.updateLinkSortOrder()
+                updateSortOrderTimer = null
+            }, 1000)
         },
         async recordClick(linkId: string | number) {
             const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
@@ -231,40 +243,26 @@ export const useProfileStore = defineStore('profile', {
         },
         async checkIdAvailability(id: string) {
             const client = useSupabaseClient<Database>()
-            const { data, error } = await client
-                .from('profiles')
-                .select('username')
-                .eq('username', id.toLowerCase())
-                .maybeSingle()
-
+            const { data, error } = await client.from('profiles').select('username').eq('username', id.toLowerCase()).maybeSingle()
             return !data && !error
         },
         async hasProfile(userId: string) {
             const client = useSupabaseClient<Database>()
-            const { data } = await client
-                .from('profiles')
-                .select('id')
-                .eq('id', userId)
-                .maybeSingle()
+            const { data } = await client.from('profiles').select('id').eq('id', userId)
             return !!data
         },
         async handleRegister(id: string) {
             const client = useSupabaseClient<Database>()
             const { data: { user: authUser } } = await client.auth.getUser()
-
             if (!authUser) return { success: false, error: '請先登入帳號' }
-
-            const { error } = await client
-                .from('profiles')
-                .insert({
-                    id: authUser.id,
-                    username: id.toLowerCase(),
-                    full_name: '新用戶',
-                    mbti: 'UNKNOWN',
-                    zodiac: 'UNKNOWN',
-                    role: 'user'
-                } as any)
-
+            const { error } = await client.from('profiles').insert({
+                id: authUser.id,
+                username: id.toLowerCase(),
+                full_name: '新用戶',
+                mbti: 'UNKNOWN',
+                zodiac: 'UNKNOWN',
+                role: 'user'
+            } as any)
             if (!error) {
                 this.profile.id = authUser.id
                 this.profile.name = '新用戶'
@@ -280,14 +278,8 @@ export const useProfileStore = defineStore('profile', {
             this.loading = true
             const client = useSupabaseClient<Database>()
             try {
-                const { data, error } = await client
-                    .from('profiles')
-                    .select('id, username, full_name, description, avatar_url, mbti, zodiac, location, tags, match_score, likes_count, followers_count')
-                    .limit(20)
-
-                if (data) {
-                    this.allProfiles = data.map(d => mapDbProfile(d as any))
-                }
+                const { data, error } = await client.from('profiles').select('*').limit(20)
+                if (data) this.allProfiles = data.map(d => mapDbProfile(d as any))
                 return { data, error }
             } finally {
                 this.loading = false

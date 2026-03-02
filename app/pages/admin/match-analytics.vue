@@ -43,7 +43,7 @@
             <div class="hero-label mb-2">配對大師指數</div>
             <div class="hero-value mb-4">{{ compatibilityScore }}</div>
             <div class="text-white-50 text-caption mb-6">您的個人資料完整度越高，<br>配對精準度將提升。</div>
-            <v-btn block color="white" variant="flat" rounded="xl" class="font-weight-black" to="/admin/profile">
+            <v-btn block color="white" variant="flat" rounded="xl" class="font-weight-black" to="/admin">
               完善資料 <v-icon end size="14">mdi-chevron-right</v-icon>
             </v-btn>
           </div>

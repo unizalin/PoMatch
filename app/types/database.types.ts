@@ -13,6 +13,7 @@ export type Profile = {
     followers_count: number
     role: string
     theme: string
+    theme_config: any | null
     created_at?: string
     updated_at?: string
 }
@@ -25,6 +26,7 @@ export type Link = {
     icon: string | null
     clicks: number
     sort_order: number
+    metadata: any | null
     created_at?: string
 }
 

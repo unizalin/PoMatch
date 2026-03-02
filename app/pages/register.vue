@@ -147,7 +147,7 @@ watch(user, async (newUser) => {
   isRedirecting.value = true
   const hasProfile = await store.hasProfile(newUser.id)
   if (hasProfile) {
-    router.replace('/admin/links')
+    router.replace('/admin')
     return
   }
   isRedirecting.value = false
@@ -182,7 +182,7 @@ const submitRegistration = async () => {
   isSubmitting.value = false
 
   if (success) {
-    router.push('/admin/links')
+    router.push('/admin')
   } else {
     errorMsg.value = error || '註冊失敗，請稍後再試。'
   }

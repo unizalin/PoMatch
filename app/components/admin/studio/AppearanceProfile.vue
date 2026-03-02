@@ -90,6 +90,12 @@
 import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
+const config = computed(() => store.profile.themeConfig)
+
+// Watch for deep changes in themeConfig components handled here
+watch(() => config.value, (newVal) => {
+  store.debouncedUpdateProfile({ themeConfig: newVal })
+}, { deep: true })
 </script>
 
 <style scoped>

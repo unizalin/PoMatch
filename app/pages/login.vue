@@ -142,7 +142,7 @@ const passwordRules = [
 const checkProfileAndRedirect = async (userId) => {
   const hasProfile = await store.hasProfile(userId)
   if (hasProfile) {
-    router.push('/admin/analytics')
+    router.push('/admin')
   } else {
     router.push('/register')
   }
@@ -189,7 +189,7 @@ const handleMagicLink = async () => {
   const { error } = await client.auth.signInWithOtp({
     email: email.value,
     options: {
-      emailRedirectTo: window.location.origin + '/admin/analytics',
+      emailRedirectTo: window.location.origin + '/admin',
     }
   })
 

@@ -32,7 +32,7 @@ const errorMsg = ref('')
 
 const handleUserId = async (userId: string) => {
   const hasProfile = await store.hasProfile(userId)
-  router.replace(hasProfile ? '/admin/links' : '/register')
+  router.replace(hasProfile ? '/admin' : '/register')
 }
 
 onMounted(async () => {
