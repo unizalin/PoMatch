@@ -36,12 +36,24 @@
 
             <v-row dense>
               <v-col cols="6">
-                <v-btn block variant="outlined" color="blue-darken-2" class="rounded-xl">
+                <v-btn
+                  block
+                  variant="outlined"
+                  color="blue-darken-2"
+                  class="rounded-xl"
+                  @click="handleSocialLogin('google')"
+                >
                   <v-icon left>mdi-google</v-icon> Google
                 </v-btn>
               </v-col>
               <v-col cols="6">
-                <v-btn block variant="outlined" color="success" class="rounded-xl">
+                <v-btn
+                  block
+                  variant="outlined"
+                  color="success"
+                  class="rounded-xl"
+                  @click="handleSocialLogin('line')"
+                >
                   <v-icon left>mdi-chat</v-icon> LINE
                 </v-btn>
               </v-col>
@@ -130,6 +142,7 @@ import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
 const router = useRouter()
+const client = useSupabaseClient()
 const user = useSupabaseUser()
 
 const customId = ref('')
@@ -186,6 +199,16 @@ const submitRegistration = async () => {
   } else {
     errorMsg.value = error || '註冊失敗，請稍後再試。'
   }
+}
+
+const handleSocialLogin = async (provider) => {
+  const { error } = await client.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: window.location.origin + '/confirm'
+    }
+  })
+  if (error) errorMsg.value = error.message
 }
 </script>
 
