@@ -248,7 +248,7 @@ export const useProfileStore = defineStore('profile', {
         },
         async hasProfile(userId: string) {
             const client = useSupabaseClient<Database>()
-            const { data } = await client.from('profiles').select('id').eq('id', userId)
+            const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle()
             return !!data
         },
         async handleRegister(id: string) {

@@ -57,7 +57,7 @@
         </transition>
       </v-col>
 
-      <!-- 3. Live Preview Area (Mockup) -->
+      <!-- 3. Live Preview Area (Mockup - Desktop only) -->
       <v-col cols="12" lg="4" class="studio-preview py-6 pr-6 d-none d-lg-block">
         <div class="preview-sticky">
           <div class="preview-card-wrap">
@@ -84,6 +84,53 @@
         </div>
       </v-col>
     </v-row>
+
+    <!-- 4. Mobile Preview FAB (Visible on sm/md only) -->
+    <v-fab
+      v-if="$vuetify.display.mdAndDown"
+      icon="mdi-cellphone-eye"
+      color="primary"
+      location="bottom end"
+      size="x-large"
+      class="mobile-preview-fab"
+      @click="mobilePreviewDialog = true"
+    >
+      <v-icon size="28">mdi-cellphone-eye</v-icon>
+      <v-tooltip activator="parent" location="left">查看預覽</v-tooltip>
+    </v-fab>
+
+    <!-- 5. Mobile Preview Dialog -->
+    <v-dialog
+      v-model="mobilePreviewDialog"
+      fullscreen
+      transition="dialog-bottom-transition"
+      class="mobile-preview-overlay"
+    >
+      <v-card class="mobile-preview-card">
+        <v-toolbar flat color="white" class="px-2 border-b">
+          <v-btn icon="mdi-close" @click="mobilePreviewDialog = false"></v-btn>
+          <v-toolbar-title class="text-subtitle-1 font-weight-black">手機版預覽</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            variant="flat"
+            rounded="xl"
+            size="small"
+            class="font-weight-black px-4"
+            :href="`/${userEmail || ''}`"
+            target="_blank"
+          >
+            正式發布
+          </v-btn>
+        </v-toolbar>
+        
+        <div class="mobile-preview-body pa-4 d-flex justify-center align-center h-100">
+          <div class="preview-zoom-container">
+            <StudioPreview />
+          </div>
+        </div>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -103,6 +150,7 @@ const user = useSupabaseUser()
 const userEmail = computed(() => user.value?.email?.split('@')[0] || 'user')
 
 const activeTab = ref('content-links')
+const mobilePreviewDialog = ref(false)
 const isSaving = ref(false)
 const lastSaved = ref(false)
 let saveTimeout: any = null
@@ -251,5 +299,35 @@ onMounted(async () => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* Mobile Preview Mobile Optimizations */
+.mobile-preview-fab {
+  position: fixed !important;
+  bottom: 32px !important;
+  right: 24px !important;
+  z-index: 100 !important;
+  box-shadow: 0 12px 24px rgba(24, 103, 192, 0.3) !important;
+}
+
+.mobile-preview-card {
+  background: #f1f5f9 !important;
+}
+
+.mobile-preview-body {
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%);
+}
+
+.preview-zoom-container {
+  transform: scale(1.1);
+  transform-origin: center center;
+}
+
+@media (max-width: 600px) {
+  .preview-zoom-container {
+    transform: scale(0.95);
+  }
 }
 </style>

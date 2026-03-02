@@ -153,18 +153,6 @@ const isSubmitting = ref(false)
 const errorMsg = ref('')
 const isRedirecting = ref(false)
 
-// Guard: if user already has a profile, redirect to admin dashboard
-watch(user, async (newUser) => {
-  // Must wait for newUser.id to be available (OAuth can fire before id is set)
-  if (!newUser?.id || isRedirecting.value) return
-  isRedirecting.value = true
-  const hasProfile = await store.hasProfile(newUser.id)
-  if (hasProfile) {
-    router.replace('/admin')
-    return
-  }
-  isRedirecting.value = false
-}, { immediate: true })
 
 const idRules = [
   v => !!v || 'ID 為必填項目',
