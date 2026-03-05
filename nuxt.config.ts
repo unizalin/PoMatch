@@ -34,11 +34,17 @@ export default defineNuxtConfig({
       title: 'PoMatch - 專屬你的數位名片',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: '建立美觀、專業的數位名片 (Prototype)，整合所有連結與社交媒體。' }
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover' },
+        { name: 'description', content: '建立美觀、專業的數位名片 (Prototype)，整合所有連結與社交媒體。' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'format-detection', content: 'telephone=no' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'apple-touch-icon', href: '/icon.png' },
+        { rel: 'manifest', href: '/manifest.json' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap' }
       ]
     }

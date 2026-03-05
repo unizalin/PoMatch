@@ -79,6 +79,21 @@
 import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
+
+// 監聽重要的設定變更並存入歷史紀錄 (使用 debounce 避免滑動時產生過多快照)
+let snapshotTimer: any = null
+watch(() => [
+  store.profile.themeConfig.linkRadius,
+  store.profile.themeConfig.linkGap,
+  store.profile.themeConfig.linkHoverScale,
+  store.profile.themeConfig.linkGlow,
+  store.profile.themeConfig.linkLayout
+], () => {
+  if (snapshotTimer) clearTimeout(snapshotTimer)
+  snapshotTimer = setTimeout(() => {
+    store.takeSnapshot()
+  }, 500)
+}, { deep: true })
 </script>
 
 <style scoped>

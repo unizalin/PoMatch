@@ -1,20 +1,44 @@
 <template>
   <div class="studio-content-links">
     <!-- Component Header -->
-    <div class="studio-section-header mb-6">
+    <div class="studio-section-header mb-4">
       <div>
-        <h2 class="studio-title">連結管理</h2>
-        <p class="studio-subtitle">管理您的社群連結與自定義按鈕</p>
+        <h2 class="studio-title">背面區塊管理</h2>
+        <p class="studio-subtitle">設計您的名片背面，加入連結、菜單或課表等功能</p>
       </div>
       <v-btn
         color="primary"
         rounded="xl"
-        class="add-btn font-weight-bold"
-        prepend-icon="mdi-plus"
+        elevation="4"
+        class="add-btn font-weight-black"
+        prepend-icon="mdi-plus-box-multiple"
         @click="openDialog"
       >
-        新增連結
+        新增功能區塊
       </v-btn>
+    </div>
+
+    <!-- ── Industry Kits (Quick Presets) ── -->
+    <div class="section-card mb-6 industry-kit-card">
+      <div class="section-label mb-4">
+        <v-icon size="14" color="accent" class="mr-1">mdi-auto-fix</v-icon>
+        產業一鍵套用 (Industry Kits)
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <v-btn
+          v-for="kit in industryKits"
+          :key="kit.id"
+          variant="tonal"
+          size="small"
+          rounded="lg"
+          :color="kit.color"
+          class="font-weight-bold"
+          @click="applyKit(kit.id)"
+        >
+          <v-icon start size="16">{{ kit.icon }}</v-icon>
+          {{ kit.label }}
+        </v-btn>
+      </div>
     </div>
 
     <!-- [NEW] Layout Picker -->
@@ -73,42 +97,8 @@
       </div>
     </div>
 
-    <!-- Add/Edit Link Dialog -->
-    <v-dialog v-model="dialog" max-width="460">
-      <v-card class="section-card pa-6" rounded="xl">
-        <h3 class="text-h6 font-weight-black mb-6">新增連結</h3>
-        
-        <div class="form-field mb-4">
-          <label class="field-label">連結名稱</label>
-          <input
-            v-model="newLink.title"
-            class="field-input"
-            placeholder="例如: 我的 Instagram"
-          />
-        </div>
-
-        <div class="form-field mb-4">
-          <label class="field-label">連結網址</label>
-          <input
-            v-model="newLink.url"
-            class="field-input"
-            placeholder="https://..."
-          />
-        </div>
-
-        <div class="form-field mb-6">
-          <label class="field-label">選擇圖示</label>
-          <select v-model="newLink.icon" class="field-input field-select">
-            <option v-for="opt in iconOptions" :key="opt.value" :value="opt.value">{{ opt.title }}</option>
-          </select>
-        </div>
-        
-        <div class="d-flex gap-3">
-          <v-btn variant="text" rounded="xl" @click="dialog = false" class="flex-grow-1">取消</v-btn>
-          <v-btn color="primary" rounded="xl" class="flex-grow-1 font-weight-bold" :loading="isAdding" @click="handleAdd">儲存連結</v-btn>
-        </div>
-      </v-card>
-    </v-dialog>
+    <!-- [NEW] Add Link Dialog (Extracted) -->
+    <LinkAddDialog v-model="dialog" @added="showMsg('連結已成功新增！', 'success')" />
 
     <!-- Snackbar -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" rounded="pill" class="mb-4">
@@ -124,6 +114,7 @@
 <script setup lang="ts">
 import LinkLayoutPicker from './LinkLayoutPicker.vue'
 import LinkStyleDialog from './LinkStyleDialog.vue'
+import LinkAddDialog from './LinkAddDialog.vue'
 
 const store = useProfileStore()
 const profile = computed(() => store.profile)
@@ -132,28 +123,45 @@ const links = computed(() => store.profile.actionLinks || [])
 const dialog = ref(false)
 const styleDialog = ref(false)
 const selectedLink = ref<any>(null)
-const isAdding = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
 const snackbarIcon = ref('mdi-check-circle')
 
-const newLink = ref({ title: '', url: '', icon: 'mdi-link-variant' })
-const iconOptions = [
-  { title: '一般連結', value: 'mdi-link-variant' },
-  { title: 'Instagram', value: 'mdi-instagram' },
-  { title: 'Facebook', value: 'mdi-facebook' },
-  { title: 'YouTube', value: 'mdi-youtube' },
-  { title: 'Threads', value: 'mdi-at' },
-  { title: 'TikTok', value: 'mdi-music-note' },
-  { title: 'X (Twitter)', value: 'mdi-twitter' },
-  { title: 'Github', value: 'mdi-github' }
+const industryKits = [
+  { id: 'fb', label: '餐飲美食', icon: 'mdi-silverware-variant', color: 'orange-darken-1' },
+  { id: 'digital', label: '數位創作者', icon: 'mdi-laptop', color: 'blue-darken-1' },
+  { id: 'edu', label: '教育服務', icon: 'mdi-school', color: 'indigo-darken-2' },
+  { id: 'art', label: '手工文創', icon: 'mdi-palette', color: 'pink-darken-1' }
 ]
 
 const openDialog = () => {
-  newLink.value = { title: '', url: '', icon: 'mdi-link-variant' }
   dialog.value = true
 }
+
+const applyKit = async (kitId: string) => {
+  if (confirm(`確定要套用此產業預設嗎？這將會新增多個功能區塊到您的名片背面。`)) {
+    const { success, error } = await store.applyIndustryPreset(kitId)
+    if (success) showMsg('產業套件已成功套用！', 'success')
+    else showMsg('套用失敗: ' + error, 'error')
+  }
+}
+const detectedPlatform = ref('')
+const userEditedTitle = ref(false)
+
+const urlPatterns = [
+  { pattern: /instagram\.com/i, icon: 'mdi-instagram', title: 'Instagram', color: '#E1306C' },
+  { pattern: /facebook\.com|fb\.com/i, icon: 'mdi-facebook', title: 'Facebook', color: '#1877F2' },
+  { pattern: /youtube\.com|youtu\.be/i, icon: 'mdi-youtube', title: 'YouTube', color: '#FF0000' },
+  { pattern: /tiktok\.com/i, icon: 'mdi-music-note', title: 'TikTok', color: '#000000' },
+  { pattern: /twitter\.com|x\.com/i, icon: 'mdi-twitter', title: 'X (Twitter)', color: '#1DA1F2' },
+  { pattern: /github\.com/i, icon: 'mdi-github', title: 'GitHub', color: '#333333' },
+  { pattern: /threads\.net/i, icon: 'mdi-at', title: 'Threads', color: '#000000' },
+  { pattern: /line\.me/i, icon: 'mdi-chat', title: 'LINE', color: '#06C755' },
+  { pattern: /linkedin\.com/i, icon: 'mdi-linkedin', title: 'LinkedIn', color: '#0A66C2' },
+  { pattern: /spotify\.com/i, icon: 'mdi-spotify', title: 'Spotify', color: '#1DB954' },
+  { pattern: /soundcloud\.com/i, icon: 'mdi-soundcloud', title: 'SoundCloud', color: '#FF3300' }
+]
 
 const openStyleDialog = (link: any) => {
   selectedLink.value = link
@@ -165,19 +173,6 @@ const saveLayout = async () => {
   showMsg('佈局已更新', 'success')
 }
 
-const handleAdd = async () => {
-  if (!newLink.value.title || !newLink.value.url) return
-  isAdding.value = true
-  const { error } = await store.addLink(newLink.value)
-  isAdding.value = false
-  if (!error) {
-    dialog.value = false
-    showMsg('連結已成功新增！', 'success')
-  } else {
-    console.error('Add link failed:', error)
-    showMsg(error.message || '新增失敗，請檢查網路連線', 'error')
-  }
-}
 
 const confirmDelete = async (link: any) => {
   if (confirm(`確定要刪除「${link.title}」嗎？`)) {

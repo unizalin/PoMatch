@@ -1,17 +1,23 @@
 <template>
   <v-dialog v-model="visible" max-width="440">
-    <v-card class="style-dialog-card pa-6" rounded="xl">
+    <v-card class="glass-card premium-blur pa-6 border-xl" elevation="0">
       <div class="d-flex align-center justify-space-between mb-6">
         <h3 class="text-h6 font-weight-black">編輯連結</h3>
         <v-btn icon="mdi-close" variant="text" size="small" @click="visible = false"></v-btn>
       </div>
 
-      <!-- Preview Section -->
+      <!-- Enhanced Preview Section -->
       <div class="style-section mb-6">
-        <label class="style-label mb-3">預覽效果</label>
-        <div class="preview-mini-link" :style="previewStyle">
-          <v-icon color="white" size="20">{{ localLink.icon || 'mdi-link-variant' }}</v-icon>
-          <span class="ml-3 font-weight-black text-white text-truncate">{{ localLink.title }}</span>
+        <label class="style-label mb-3">即時預覽 (Aurora View)</label>
+        <div class="preview-container-box">
+          <!-- Aurora Backgrounds -->
+          <div class="aurora-glow glow-1"></div>
+          <div class="aurora-glow glow-2"></div>
+          
+          <div class="preview-mini-link hover-scale" :style="previewStyle">
+            <v-icon color="white" size="20">{{ localLink.icon || 'mdi-link-variant' }}</v-icon>
+            <span class="ml-3 font-weight-black text-white text-truncate">{{ localLink.title }}</span>
+          </div>
         </div>
       </div>
 
@@ -87,11 +93,12 @@
         block
         rounded="xl"
         size="large"
-        class="font-weight-black"
+        class="font-weight-black save-btn mt-4"
+        elevation="8"
         :loading="loading"
         @click="handleSave"
       >
-        儲存變更
+        儲存變更 (Save Changes)
       </v-btn>
     </v-card>
   </v-dialog>
@@ -148,20 +155,21 @@ const previewStyle = computed(() => ({
 
 const handleSave = async () => {
   loading.value = true
-  // 1. Update basic info (title, url) via RPC or general method
   const client = useSupabaseClient()
-  await client.from('links').update({ 
+  const { error } = await client.from('links').update({ 
     title: localLink.value.title, 
     url: localLink.value.url,
     metadata: metadata.value 
   }).eq('id', props.link.id)
   
-  // 2. Update local store
-  const storeLink = store.profile.actionLinks.find(l => l.id === props.link.id)
-  if (storeLink) {
-    storeLink.title = localLink.value.title
-    storeLink.url = localLink.value.url
-    storeLink.metadata = metadata.value
+  if (!error) {
+    // Update local store reactivity-safely
+    store.profile.actionLinks = store.profile.actionLinks.map(l => 
+      l.id === props.link.id 
+        ? { ...l, title: localLink.value.title, url: localLink.value.url, metadata: metadata.value }
+        : l
+    )
+    store.takeSnapshot()
   }
 
   loading.value = false
@@ -171,16 +179,37 @@ const handleSave = async () => {
 </script>
 
 <style scoped>
-.style-dialog-card {
-  background: white;
-}
 .style-label {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
+.preview-container-box {
+  position: relative;
+  height: 120px;
+  background: #0f172a;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.aurora-glow {
+  position: absolute;
+  width: 150px; height: 150px; border-radius: 50%; filter: blur(40px); opacity: 0.4; pointer-events: none;
+}
+.glow-1 { top: -20px; right: -20px; background: #6366f1; animation: aurora-float 8s infinite alternate; }
+.glow-2 { bottom: -20px; left: -20px; background: #a855f7; animation: aurora-float 6s infinite alternate-reverse; }
+
+@keyframes aurora-float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(20px, 20px) scale(1.2); }
+}
+
 .color-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -191,15 +220,17 @@ const handleSave = async () => {
   border-radius: 50%;
   cursor: pointer;
   border: 3px solid transparent;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 .color-circle.active {
-  border-color: #cbd5e1;
-  transform: scale(1.1);
+  border-color: #1867c0;
+  transform: scale(1.15);
+  box-shadow: 0 8px 20px rgba(24, 103, 192, 0.2);
 }
 .field-input {
-  width: 100%; height: 44px; padding: 0 14px; border: 1.5px solid #e2e8f0; border-radius: 12px;
-  font-size: 14px; color: #0f172a; background: white; outline: none; transition: all 0.15s;
+  width: 100%; height: 48px; padding: 0 16px; border: 1.5px solid #e2e8f0; border-radius: 14px;
+  font-size: 14px; color: #0f172a; background: white; outline: none; transition: all 0.2s;
 }
-.field-input:focus { border-color: #1867c0; box-shadow: 0 0 0 3px rgba(24,103,192,0.1); }
+.field-input:focus { border-color: #1867c0; box-shadow: 0 0 0 4px rgba(24,103,192,0.1); }
 </style>

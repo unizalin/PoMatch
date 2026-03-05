@@ -22,7 +22,8 @@ const mapDbProfile = (d: any) => ({
         linkRadius: 12,
         linkGap: 8,
         linkHoverScale: 1.02,
-        linkGlow: true
+        linkGlow: true,
+        linkLayout: 'list'
     },
     persona: {
         mbti: d.mbti || 'UNKNOWN',
@@ -36,10 +37,6 @@ const mapDbProfile = (d: any) => ({
         followers: d.followers_count || 0
     }
 })
-
-// Private timers for debouncing
-let updateProfileTimer: any = null
-let updateSortOrderTimer: any = null
 
 export const useProfileStore = defineStore('profile', {
     state: () => ({
@@ -64,7 +61,9 @@ export const useProfileStore = defineStore('profile', {
                 linkGap: 8,
                 linkHoverScale: 1.02,
                 linkGlow: true,
-                linkLayout: 'list'
+                linkLayout: 'list',
+                cardMode: false,
+                flipDirection: 'horizontal'
             },
             persona: {
                 mbti: 'UNKNOWN',
@@ -86,29 +85,77 @@ export const useProfileStore = defineStore('profile', {
             ctr: '0%',
             dailyTrend: [] as number[]
         },
-        allProfiles: [] as any[]
+        currentFlipSide: 'front' as 'front' | 'back',
+        allProfiles: [] as any[],
+        _sortTimeout: null as any,
+        // ── 歷史紀錄系統 ──
+        historyStack: [] as string[],
+        historyIndex: -1,
+        isDirty: false
     }),
 
     getters: {
         computedAnalytics: (state) => {
             const profile = state.profile
-            if (state.analytics.totalVisitors > 0) return state.analytics
-            const seed = profile.id ? profile.id.split('-')[0].length : 10
-            const likes = profile.interactiveStats?.likes || 0
-            const followers = profile.interactiveStats?.followers || 0
-            const baseVisitors = (likes * 15) + (followers * 5) + (seed * 85)
+            if (state.analytics && state.analytics.totalVisitors > 0) return state.analytics
+            const seed = (profile.id && typeof profile.id === 'string') ? profile.id.split('-')[0].length : 10
+            const likesCount = profile.interactiveStats?.likes || 0
+            const followersCount = profile.interactiveStats?.followers || 0
+            const baseVisitors = (likesCount * 15) + (followersCount * 5) + (seed * 85)
             const baseViews = baseVisitors * 2.4
-            const ctr = ((likes + 10) / (baseVisitors + 100) * 100).toFixed(1) + '%'
+            const ctr = ((likesCount + 10) / (baseVisitors + 100) * 100).toFixed(1) + '%'
             return {
                 totalVisitors: Math.floor(baseVisitors),
                 totalViews: Math.floor(baseViews),
                 ctr,
                 dailyTrend: [12, 18, 15, 29, 22, 35, 28, 42]
             }
-        }
+        },
+        canUndo: (state) => state.historyIndex > 0,
+        canRedo: (state) => state.historyIndex < state.historyStack.length - 1
     },
 
     actions: {
+        // ── 歷史紀錄核心操作 ──
+        takeSnapshot() {
+            const snapshot = JSON.stringify({
+                profile: this.profile,
+            })
+
+            // 如果當前索引不是在最末端，則捨棄掉 Redo 的分支
+            if (this.historyIndex < this.historyStack.length - 1) {
+                this.historyStack = this.historyStack.slice(0, this.historyIndex + 1)
+            }
+
+            this.historyStack.push(snapshot)
+            // 限制堆疊大小 (例如 50 步)
+            if (this.historyStack.length > 50) {
+                this.historyStack.shift()
+            }
+            this.historyIndex = this.historyStack.length - 1
+            this.isDirty = true
+        },
+
+        undo() {
+            if (!this.canUndo) return
+            this.historyIndex--
+            const sessionData = this.historyStack[this.historyIndex]
+            if (!sessionData) return
+            const state = JSON.parse(sessionData)
+            this.profile = JSON.parse(JSON.stringify(state.profile))
+            this.isDirty = true
+        },
+
+        redo() {
+            if (!this.canRedo) return
+            this.historyIndex++
+            const sessionData = this.historyStack[this.historyIndex]
+            if (!sessionData) return
+            const state = JSON.parse(sessionData)
+            this.profile = JSON.parse(JSON.stringify(state.profile))
+            this.isDirty = true
+        },
+
         async fetchProfile(username: string) {
             this.loading = true
             const client = useSupabaseClient<Database>()
@@ -121,13 +168,33 @@ export const useProfileStore = defineStore('profile', {
                     .maybeSingle()
 
                 if (data) {
+                    const mapped = mapDbProfile(data)
                     this.profile = {
                         ...this.profile,
-                        ...mapDbProfile(data as any),
-                        actionLinks: data.links || []
+                        ...mapped,
+                        actionLinks: (data as any).links || []
                     }
+                    // 初始化歷史紀錄
+                    this.historyStack = [JSON.stringify({ profile: this.profile })]
+                    this.historyIndex = 0
+                    this.isDirty = false
                 }
                 return { data, error }
+            } finally {
+                this.loading = false
+            }
+        },
+        setFlipSide(side: 'front' | 'back') {
+            this.currentFlipSide = side
+        },
+        async saveChanges() {
+            this.loading = true
+            try {
+                const { error } = await this.updateProfile(this.profile)
+                if (!error) {
+                    this.isDirty = false
+                }
+                return { error }
             } finally {
                 this.loading = false
             }
@@ -161,18 +228,6 @@ export const useProfileStore = defineStore('profile', {
             const { error } = await client.from('profiles').upsert(dbPayload)
             return { error }
         },
-        async debouncedUpdateProfile(newData: any) {
-            if (newData.name !== undefined) this.profile.name = newData.name
-            if (newData.description !== undefined) this.profile.description = newData.description
-            if (newData.themeConfig !== undefined) this.profile.themeConfig = { ...this.profile.themeConfig, ...newData.themeConfig }
-            if (newData.persona !== undefined) this.profile.persona = { ...this.profile.persona, ...newData.persona }
-
-            if (updateProfileTimer) clearTimeout(updateProfileTimer)
-            updateProfileTimer = setTimeout(async () => {
-                await this.updateProfile(newData)
-                updateProfileTimer = null
-            }, 800)
-        },
         async addLink(link: any) {
             const client = useSupabaseClient<Database>()
             const { data: { session } } = await client.auth.getSession()
@@ -180,21 +235,72 @@ export const useProfileStore = defineStore('profile', {
 
             if (!userId) return { data: null, error: new Error('Unauthorized') }
 
+            const blockType = link.metadata?.block_type || 'standard_link'
+
             const { data, error } = await client
                 .from('links')
                 .insert({
                     profile_id: userId,
-                    title: link.title,
-                    url: link.url,
-                    icon: link.icon || 'mdi-link-variant',
+                    title: link.title || '新區塊',
+                    url: link.url || '#',
+                    icon: link.icon || 'mdi-cube-outline',
                     sort_order: this.profile.actionLinks.length,
-                    metadata: link.metadata || {}
+                    metadata: {
+                        ...link.metadata,
+                        block_type: blockType
+                    }
                 } as any)
                 .select()
                 .single()
 
-            if (data) this.profile.actionLinks.push(data as any)
+            if (data) {
+                this.profile.actionLinks.push(data as any)
+                this.takeSnapshot()
+            }
             return { data, error }
+        },
+        async applyIndustryPreset(type: string) {
+            this.loading = true
+            try {
+                // 清除現有連結 (選用，或是附加？計畫中是說「自動新增一組」，這裡採附加方式但先過濾重複預設)
+                const presetMap: Record<string, any[]> = {
+                    'fb': [
+                        { title: '精選菜色', url: '#', icon: 'mdi-silverware-fork-knife', metadata: { block_type: 'product_grid', items: [{ name: '招牌菜', price: '250', img: '' }] } },
+                        { title: '立即預約', url: '#', icon: 'mdi-calendar-check', metadata: { block_type: 'standard_link', color: '#E1306C' } }
+                    ],
+                    'digital': [
+                        { title: '我的服務', url: '#', icon: 'mdi-briefcase-variant', metadata: { block_type: 'service_card', details: '提供 UI/UX 設計與網頁開發' } },
+                        { title: '查看作品集', url: '#', icon: 'mdi-folder-open', metadata: { block_type: 'standard_link', color: '#1877F2' } }
+                    ],
+                    'edu': [
+                        { title: '本週課表', url: '#', icon: 'mdi-calendar-clock', metadata: { block_type: 'schedule_list', days: ['Mon', 'Wed', 'Fri'] } },
+                        { title: '學費方案', url: '#', icon: 'mdi-currency-usd', metadata: { block_type: 'pricing_tier', price: '1500/月' } }
+                    ],
+                    'factory': [
+                        { title: '產品目錄', url: '#', icon: 'mdi-factory', metadata: { block_type: 'standard_link' } },
+                        { title: '聯繫窗口', url: '#', icon: 'mdi-phone-in-talk', metadata: { block_type: 'standard_link', color: '#06C755' } }
+                    ],
+                    'art': [
+                        { title: '手作作品集', url: '#', icon: 'mdi-palette', metadata: { block_type: 'product_grid' } },
+                        { title: '文創商城', url: '#', icon: 'mdi-storefront', metadata: { block_type: 'standard_link', color: '#FF3300' } }
+                    ],
+                    'agri': [
+                        { title: '當季農產', url: '#', icon: 'mdi-leaf', metadata: { block_type: 'product_grid' } },
+                        { title: '觀光預約', url: '#', icon: 'mdi-map-marker-radius', metadata: { block_type: 'standard_link' } }
+                    ]
+                }
+
+                const blocks = presetMap[type] || []
+                for (const block of blocks) {
+                    await this.addLink(block)
+                }
+                this.takeSnapshot()
+                return { success: true }
+            } catch (err: any) {
+                return { success: false, error: err.message }
+            } finally {
+                this.loading = false
+            }
         },
         async updateLinkMetadata(linkId: string | number, metadata: any) {
             const client = useSupabaseClient<Database>()
@@ -216,16 +322,17 @@ export const useProfileStore = defineStore('profile', {
         async updateLinkSortOrder() {
             const client = useSupabaseClient<Database>()
             const updates = this.profile.actionLinks.map((link: any, index: number) => (
-                client.from('links').update({ sort_order: index } as never).eq('id', link.id)
+                client.from('links').update({ sort_order: index } as any).eq('id', link.id)
             ))
             await Promise.all(updates)
+            this.isDirty = true
         },
         async debouncedUpdateLinkSortOrder() {
-            if (updateSortOrderTimer) clearTimeout(updateSortOrderTimer)
-            updateSortOrderTimer = setTimeout(async () => {
+            if (this._sortTimeout) clearTimeout(this._sortTimeout)
+            this._sortTimeout = setTimeout(async () => {
                 await this.updateLinkSortOrder()
-                updateSortOrderTimer = null
-            }, 1000)
+                this._sortTimeout = null
+            }, 500)
         },
         async recordClick(linkId: string | number) {
             const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
@@ -238,7 +345,7 @@ export const useProfileStore = defineStore('profile', {
             if (this.profile && this.profile.interactiveStats) {
                 const client = useSupabaseClient<Database>()
                 this.profile.interactiveStats.likes++
-                await client.rpc('increment_likes' as never, { profile_user_id: this.profile.id } as never)
+                await client.rpc('increment_likes' as any, { profile_user_id: this.profile.id } as any)
             }
         },
         async checkIdAvailability(id: string) {
@@ -279,7 +386,9 @@ export const useProfileStore = defineStore('profile', {
             const client = useSupabaseClient<Database>()
             try {
                 const { data, error } = await client.from('profiles').select('*').limit(20)
-                if (data) this.allProfiles = data.map(d => mapDbProfile(d as any))
+                if (data) {
+                    this.allProfiles = (data as any[]).map(d => mapDbProfile(d))
+                }
                 return { data, error }
             } finally {
                 this.loading = false

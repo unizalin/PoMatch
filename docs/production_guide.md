@@ -58,3 +58,14 @@ Supabase 預設的郵件伺服器每天僅限發送 **3 封驗證信**。這在�
 - **Redirect URLs**: 加入 `http://localhost:3002/confirm`
 
 ---
+## 8. 開發規範與語法檢查 (Development Standards)
+
+### A. 複雜結構的標籤管理
+針對 3D 卡片、Bento Grid 等深度嵌套結構：
+1. **禁止使用自閉合標籤**：對於自定義組件 (如 `BlockProductGrid`)，在複雜模板中必須使用 `<BlockProductGrid></BlockProductGrid>` 明確閉合。
+2. **結構註解**：在深層 `div` 的結尾必須加上註解，例如 `</div> <!-- end card-inner -->`。
+3. **標籤平衡檢查**：在提交重大模板變更前，應執行 `grep -o "<div" file.vue | wc -l` 與 `grep -o "</div>" file.vue | wc -l` 確保數量完全一致。
+
+### B. 生產環境 Build 驗證
+在完成公開頁面或 Admin 預覽組件修改後，**必須執行 `npm run build`** 而非僅依賴 `npm run dev` 進行驗證。生產環境的 Vite 編譯器對標籤完整性有更嚴格的解析要求。
+進出數量是否一致。

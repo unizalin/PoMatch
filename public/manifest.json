@@ -1,0 +1,17 @@
+{
+    "name": "PoMatch 數位名片",
+    "short_name": "PoMatch",
+    "description": "你的專屬數位名片與人脈牆",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#6366f1",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

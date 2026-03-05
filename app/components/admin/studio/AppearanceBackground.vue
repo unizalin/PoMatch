@@ -40,6 +40,50 @@
       </div>
     </div>
 
+    <!-- ── 3D Card Mode Settings ── -->
+    <div class="section-card mb-4">
+      <div class="section-label">
+        <v-icon size="16" color="accent">mdi-rotate-3d-variant</v-icon>
+        3D 擬真名片設定
+      </div>
+
+      <v-switch
+        v-model="store.profile.themeConfig.cardMode"
+        label="啟用 3D 雙面名片模式"
+        color="primary"
+        hide-details
+        density="compact"
+        class="mb-4"
+      ></v-switch>
+
+      <v-fade-transition>
+        <div v-if="store.profile.themeConfig.cardMode">
+          <div class="control-label mb-2">翻轉方向</div>
+          <v-btn-toggle
+            v-model="store.profile.themeConfig.flipDirection"
+            mandatory
+            density="compact"
+            variant="outlined"
+            rounded="lg"
+            color="primary"
+            class="w-100"
+          >
+            <v-btn value="horizontal" class="flex-grow-1" size="small">
+              <v-icon start size="16">mdi-swap-horizontal</v-icon>
+              水平翻轉
+            </v-btn>
+            <v-btn value="vertical" class="flex-grow-1" size="small">
+              <v-icon start size="16">mdi-swap-vertical</v-icon>
+              垂直翻轉
+            </v-btn>
+          </v-btn-toggle>
+          <p class="text-caption text-grey mt-2">
+            提示：正面顯示個人簡介，背面顯示社交連結與數據。
+          </p>
+        </div>
+      </v-fade-transition>
+    </div>
+
     <!-- ── Texture & Presets ── -->
     <div class="section-card">
       <div class="section-label">
@@ -88,7 +132,24 @@ const presets = [
 
 const applyPreset = (p: any) => {
   store.profile.theme = p.theme
+  store.takeSnapshot()
 }
+
+// 監聽重要的設定變更並存入歷史紀錄 (使用 debounce 避免滑動時產生過多快照)
+let snapshotTimer: any = null
+watch(() => [
+  store.profile.themeConfig.auroraIntensity,
+  store.profile.themeConfig.glassIntensity,
+  store.profile.themeConfig.grainOpacity,
+  store.profile.themeConfig.cardMode,
+  store.profile.themeConfig.flipDirection,
+  store.profile.theme === 'glassmorphism' // 監聽 theme 也可以
+], () => {
+  if (snapshotTimer) clearTimeout(snapshotTimer)
+  snapshotTimer = setTimeout(() => {
+    store.takeSnapshot()
+  }, 1000)
+}, { deep: true })
 </script>
 
 <style scoped>
