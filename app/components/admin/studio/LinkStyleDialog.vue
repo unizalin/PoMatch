@@ -6,17 +6,12 @@
         <v-btn icon="mdi-close" variant="text" size="small" @click="visible = false"></v-btn>
       </div>
 
-      <!-- Enhanced Preview Section -->
-      <div class="style-section mb-6">
-        <label class="style-label mb-3">即時預覽 (Aurora View)</label>
-        <div class="preview-container-box">
-          <!-- Aurora Backgrounds -->
-          <div class="aurora-glow glow-1"></div>
-          <div class="aurora-glow glow-2"></div>
-          
-          <div class="preview-mini-link hover-scale" :style="previewStyle">
-            <v-icon color="white" size="20">{{ localLink.icon || 'mdi-link-variant' }}</v-icon>
-            <span class="ml-3 font-weight-black text-white text-truncate">{{ localLink.title }}</span>
+      <!-- Compact Preview Section -->
+      <div class="style-section mb-4">
+        <label class="style-label mb-2">圖標效果預覽</label>
+        <div class="preview-compact-box">
+          <div :style="previewStyle" class="preview-icon-naked">
+            <v-icon size="48">{{ localLink.icon || 'mdi-link-variant' }}</v-icon>
           </div>
         </div>
       </div>
@@ -144,13 +139,12 @@ watch(() => props.link, (val) => {
 }, { immediate: true, deep: true })
 
 const previewStyle = computed(() => ({
-  background: metadata.value.color || 'linear-gradient(135deg, #6366f1, #a855f7)',
-  borderRadius: '16px',
-  padding: '14px 20px',
+  color: metadata.value.color || '#6366f1',
   display: 'flex',
   alignItems: 'center',
-  minHeight: '52px',
-  boxShadow: metadata.value.animation === 'glow' ? `0 0 20px ${metadata.value.color || '#6366f1'}` : 'none'
+  justifyContent: 'center',
+  padding: '8px',
+  transition: 'all 0.3s ease'
 }))
 
 const handleSave = async () => {
@@ -187,27 +181,20 @@ const handleSave = async () => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.preview-container-box {
+.preview-compact-box {
   position: relative;
-  height: 120px;
-  background: #0f172a;
-  border-radius: 20px;
+  height: 80px;
+  background: #f8fafc;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid #f1f5f9;
 }
-.aurora-glow {
-  position: absolute;
-  width: 150px; height: 150px; border-radius: 50%; filter: blur(40px); opacity: 0.4; pointer-events: none;
-}
-.glow-1 { top: -20px; right: -20px; background: #6366f1; animation: aurora-float 8s infinite alternate; }
-.glow-2 { bottom: -20px; left: -20px; background: #a855f7; animation: aurora-float 6s infinite alternate-reverse; }
 
-@keyframes aurora-float {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(20px, 20px) scale(1.2); }
+.preview-icon-naked {
+  transition: transform 0.3s ease;
 }
 
 .color-grid {

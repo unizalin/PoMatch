@@ -74,18 +74,13 @@
               <v-btn icon="mdi-chevron-down" variant="text" size="x-small" :disabled="index === links.length - 1" @click="moveLink(index, 1)"></v-btn>
             </div>
 
-            <div class="lc-icon-wrap" :style="{ color: getIconColor(link.icon) }">
-              <v-icon size="24">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+            <div class="lc-icon-naked">
+              <v-icon size="32" :color="getIconColor(link.icon)">{{ link.icon || 'mdi-link-variant' }}</v-icon>
             </div>
 
             <div class="lc-info">
               <div class="lc-title text-truncate">{{ link.title }}</div>
               <div class="lc-url text-truncate">{{ link.url }}</div>
-            </div>
-
-            <div class="lc-stats">
-              <div class="lc-clicks">{{ link.clicks || 0 }}</div>
-              <div class="lc-clicks-label">點擊</div>
             </div>
 
             <div class="lc-actions">
@@ -252,11 +247,11 @@ const getIconColor = (icon: string) => {
 .link-card-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px solid transparent;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fdfdfd;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
   transition: all 0.2s;
 }
 .link-card-item:hover {
@@ -270,15 +265,12 @@ const getIconColor = (icon: string) => {
   flex-direction: column;
   opacity: 0.4;
 }
-.lc-icon-wrap {
-  width: 48px;
-  height: 48px;
+.lc-icon-naked {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .lc-info { flex-grow: 1; overflow: hidden; }
 .lc-title { font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 2px; }

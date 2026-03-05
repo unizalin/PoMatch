@@ -65,32 +65,60 @@
             <!-- ── FRONT SIDE ── -->
             <div class="card-front">
               <div 
-                class="phone-content-front d-flex flex-column align-center justify-center h-100 pa-6"
+                class="phone-content-front d-flex flex-column align-center justify-center h-100"
                 :style="{ gap: `${profile.themeConfig?.contentGap || 16}px` }"
               >
-                <div :class="['glass-card-mockup front-face pa-6 w-100 text-center d-flex flex-column h-100', profile.theme]">
-                  <div class="d-flex justify-end mb-n4">
-                    <v-chip size="x-small" color="success" variant="flat" class="text-caption font-weight-bold zoom-70">
+                <!-- Front Face -->
+                <div :class="['front-face glass-card-mockup w-100 h-100 px-8 py-10 d-flex flex-column', `theme-${profile.theme}`]">
+                  <!-- Phone Profile Header -->
+                  <div class="d-flex justify-end mb-2">
+                    <v-chip size="x-small" color="success" variant="flat" class="text-caption font-weight-black pulse-indicator">
                       <v-icon start size="8">mdi-circle</v-icon>
                       在線上
                     </v-chip>
                   </div>
 
-                  <div class="d-flex align-center gap-4 mb-4">
-                    <v-avatar size="60" class="phone-avatar-border elevation-10">
+                  <div class="phone-hero d-flex flex-column align-center gap-6 mb-6 mt-4 text-center">
+                    <v-avatar 
+                      size="64" 
+                      class="phone-avatar-border elevation-10"
+                      :style="{ 
+                        transform: `translate(${profile.themeConfig?.avatarOffset || 0}px, ${profile.themeConfig?.vOffset || 0}px)` 
+                      }"
+                    >
                       <v-img :src="profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`"></v-img>
                     </v-avatar>
-                    <div class="text-left">
+                    <div 
+                      class="text-center w-100"
+                      :style="{ 
+                        transform: `translate(${profile.themeConfig?.textOffset || 0}px, ${profile.themeConfig?.textVOffset || 0}px)` 
+                      }"
+                    >
                       <h1 
-                        class="phone-name mb-0"
-                        :style="{ transform: `scale(${profile.themeConfig?.nameScale || 1.1})`, transformOrigin: 'left' }"
+                        class="phone-name mb-3"
+                        :style="{ 
+                          transform: `scale(${profile.themeConfig?.nameScale || 1.1})`, 
+                          transformOrigin: 'center'
+                        }"
                       >
                         {{ profile.name || '@' + profile.username }}
                       </h1>
-                      <div class="d-flex gap-1 mt-1">
-                        <v-chip size="x-small" variant="tonal" color="primary" class="zoom-80 px-1">{{ profile.persona?.mbti }}</v-chip>
-                        <v-chip size="x-small" variant="tonal" color="secondary" class="zoom-80 px-1">{{ profile.persona?.zodiac }}</v-chip>
+                      
+                      <div class="d-flex justify-center gap-1 mb-3">
+                        <v-chip size="x-small" variant="tonal" color="primary" class="zoom-70 px-1 font-weight-black">{{ profile.persona?.mbti }}</v-chip>
+                        <v-chip size="x-small" variant="tonal" color="secondary" class="zoom-70 px-1 font-weight-black">{{ profile.persona?.zodiac }}</v-chip>
                       </div>
+
+                      <!-- Interests in Preview -->
+                      <div v-if="profile.persona?.tags?.length" class="d-flex flex-wrap justify-center gap-2 mb-4">
+                        <span v-for="tag in profile.persona.tags" :key="tag" class="interest-tag-tiny text-uppercase">
+                          #{{ tag }}
+                        </span>
+                      </div>
+
+                      <p v-if="profile.description" class="phone-bio-tiny mb-0 line-clamp-2">
+                        {{ profile.description }}
+                      </p>
                     </div>
                   </div>
                   
@@ -103,57 +131,47 @@
                       :key="social.platform"
                       icon
                       :color="social.color"
-                      variant="flat"
-                      size="30"
-                      class="social-icon-btn elevation-3"
+                      variant="text"
+                      size="36"
+                      class="social-icon-btn"
                     >
-                      <v-icon size="16">{{ social.icon }}</v-icon>
+                      <v-icon size="20">{{ social.icon }}</v-icon>
                     </v-btn>
                   </div>
 
                   <!-- Links on Front (always list mode) -->
-                  <div class="links-divider mb-3"></div>
-                  <div class="flex-grow-1 overflow-y-auto custom-scrollbar pr-1">
-                    <div v-if="profile.actionLinks?.length" class="links-list-clean">
-                      <div 
-                        v-for="link in profile.actionLinks" 
-                        :key="link.id" 
-                        class="mb-3"
-                      >
-                        <BlockProductGrid 
-                          v-if="link.metadata?.block_type === 'product_grid'"
-                          :title="link.title"
-                          :items="link.metadata?.items"
-                        ></BlockProductGrid>
-
-                        <BlockSchedule
-                          v-else-if="link.metadata?.block_type === 'schedule_list'"
-                          :title="link.title"
-                          :days="link.metadata?.days"
-                        ></BlockSchedule>
-
-                        <BlockService
-                          v-else-if="link.metadata?.block_type === 'service_card'"
-                          :title="link.title"
-                          :details="link.metadata?.details"
-                          :tag="link.metadata?.tag"
-                        ></BlockService>
-
-                        <div
-                          v-else
-                          class="phone-link-btn"
-                          :style="getLinkStyle(link)"
+                    <!-- Link Layouts Area -->
+                    <div class="w-100 flex-grow-1 overflow-y-auto pr-1 phone-scrollbar custom-scrollbar" style="max-height: 280px;">
+                      <!-- Bento Layout -->
+                      <div v-if="profile.themeConfig?.linkLayout === 'bento'" class="links-bento-tiny">
+                        <div 
+                          v-for="(link, index) in profile.actionLinks" 
+                          :key="link.id" 
+                          class="link-bento-pill-tiny"
+                          :class="{ 'wide': index % 3 === 0 }"
                         >
-                          <div class="link-icon-wrap" :style="{ '--icon-color': link.metadata?.color || '#6366f1' }">
-                            <v-icon size="14" color="white">{{ link.icon || 'mdi-link-variant' }}</v-icon>
-                          </div>
-                          <span class="link-title-text font-weight-bold text-truncate">{{ link.title }}</span>
+                          <v-icon :size="index % 3 === 0 ? 20 : 16" :color="link.metadata?.color || 'primary'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          <span class="text-truncate font-weight-bold ml-1" style="font-size: 10px;">{{ link.title }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Grid Layout -->
+                      <div v-else-if="profile.themeConfig?.linkLayout === 'grid'" class="links-grid-tiny">
+                        <div v-for="link in profile.actionLinks" :key="link.id" class="link-grid-pill-tiny">
+                          <v-icon size="18" :color="link.metadata?.color || 'primary'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                        </div>
+                      </div>
+                      
+                      <!-- List Layout (Vertical) -->
+                      <div v-else class="links-list-tiny">
+                        <div v-for="link in profile.actionLinks" :key="link.id" class="link-item-tiny">
+                          <v-icon size="16" :color="link.metadata?.color || 'primary'" class="mr-2">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          <span class="text-truncate" style="font-size: 11px;">{{ link.title }}</span>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="flip-prompt mt-2 opacity-40">
+                  <div class="flip-prompt mt-auto opacity-40">
                     <v-icon size="12" class="mr-1">mdi-rotate-3d-variant</v-icon>
                     <span class="text-tiny">翻轉查看數據</span>
                   </div>
@@ -163,51 +181,56 @@
 
             <!-- ── BACK SIDE ── -->
             <div class="card-back">
-              <div class="phone-content-back h-100 pa-6 d-flex flex-column justify-center align-center text-center">
-                <!-- Stats Row -->
-                <div class="mb-6 bg-white-opacity-10 rounded-xl py-4 w-100 stats-row-premium border-white-10 d-flex text-center">
-                  <div class="flex-grow-1">
-                    <div class="text-subtitle-1 font-weight-black text-white">88%</div>
-                    <div class="text-tiny text-white opacity-70 uppercase">契合度</div>
+              <div class="phone-content-back h-100 d-flex flex-column align-center justify-center">
+                <!-- Back Face -->
+                <div :class="['back-face glass-card-mockup w-100 h-100 d-flex flex-column align-center', `theme-${profile.theme}`]">
+                  <!-- Stats Area -->
+                  <div class="w-100 mb-8 mt-2">
+                    <div class="glass-stats-compact d-flex rounded-xl overflow-hidden py-4 border-white-10">
+                      <div class="flex-grow-1 border-e border-white-10">
+                        <div class="text-h6 font-weight-black text-white">{{ profile.interactiveStats?.matchScore || 88 }}%</div>
+                        <div class="text-caption text-white opacity-60 font-weight-black">契合度</div>
+                      </div>
+                      <div class="flex-grow-1 border-e border-white-10">
+                        <div class="text-h6 font-weight-black text-white">{{ profile.interactiveStats?.likes || 0 }}</div>
+                        <div class="text-caption text-white opacity-60 font-weight-black">喜歡</div>
+                      </div>
+                      <div class="flex-grow-1">
+                        <div class="text-h6 font-weight-black text-white">{{ profile.interactiveStats?.followers || 0 }}</div>
+                        <div class="text-caption text-white opacity-60 font-weight-black">追蹤</div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="flex-grow-1 border-s border-e border-white-10">
-                    <div class="text-subtitle-1 font-weight-black text-white">{{ profile.interactiveStats?.likes || 0 }}</div>
-                    <div class="text-tiny text-white opacity-70 uppercase">喜歡</div>
+
+                  <!-- Branding Centerpiece -->
+                  <div class="branding-ring mb-8">
+                     <v-icon size="32" color="white" class="opacity-20">mdi-face-recognition</v-icon>
                   </div>
-                  <div class="flex-grow-1">
-                    <div class="text-subtitle-1 font-weight-black text-white">{{ profile.interactiveStats?.followers || 0 }}</div>
-                    <div class="text-tiny text-white opacity-70 uppercase">追蹤</div>
+
+                  <!-- Social Row - Centered & Naked -->
+                  <div class="social-row-naked d-flex justify-center flex-wrap gap-4 mb-4">
+                    <v-btn
+                      v-for="social in (profile.socialLinks || [])"
+                      :key="social.platform"
+                      icon
+                      :color="social.color"
+                      variant="text"
+                      size="48"
+                      class="social-btn-naked-preview"
+                    >
+                      <v-icon size="24">{{ social.icon }}</v-icon>
+                    </v-btn>
                   </div>
-                </div>
 
-                <!-- Simulation Chip/Stripe -->
-                <div class="mb-8 w-100 d-flex justify-end opacity-20">
-                  <div class="bg-white rounded-md" style="width: 50px; height: 35px;"></div>
+                <div class="branding-badge-premium mt-auto">
+                  <v-icon size="12" class="mr-1" color="primary">mdi-rocket-launch</v-icon>
+                  <span class="font-weight-black letter-spacing-2">POMATCH</span>
                 </div>
-
-                <!-- Social Minimal - Center aligned on back -->
-                <div class="social-row-back d-flex justify-center flex-wrap gap-4 mb-4">
-                  <v-btn
-                    v-for="social in (profile.socialLinks || [])"
-                    :key="social.platform"
-                    icon
-                    :color="social.color"
-                    variant="flat"
-                    size="44"
-                    class="elevation-8"
-                  >
-                    <v-icon size="22">{{ social.icon }}</v-icon>
-                  </v-btn>
-                </div>
-
-                <div class="branding-badge mt-auto">
-                  <v-icon size="10" class="mr-1">mdi-rocket-launch</v-icon>
-                  POWERED BY POMATCH
-                </div>
-              </div> <!-- end BACK content -->
-            </div> <!-- end card-back -->
-          </div> <!-- end card-inner -->
-        </div> <!-- end card-perspective -->
+              </div> <!-- end back-face -->
+            </div> <!-- end phone-content-back -->
+          </div> <!-- end card-back -->
+        </div> <!-- end card-inner -->
+      </div> <!-- end card-perspective -->
 
         <!-- Grain Overlay -->
         <div 
@@ -223,9 +246,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useProfileStore } from '~/stores/profile'
-import BlockProductGrid from '~/components/profile/blocks/BlockProductGrid.vue'
-import BlockSchedule from '~/components/profile/blocks/BlockSchedule.vue'
-import BlockService from '~/components/profile/blocks/BlockService.vue'
 
 const store = useProfileStore()
 const profile = computed(() => store.profile)
@@ -253,22 +273,6 @@ const deviceStyle = computed(() => {
     transition: 'width 0.3s ease, height 0.3s ease'
   }
 })
-
-const getLinkStyle = (link: any) => {
-  const cfg = profile.value?.themeConfig
-  const style: any = {
-    borderRadius: `${cfg?.linkRadius || 24}px`,
-  }
-  if (link.metadata?.color) {
-    if ((cfg?.linkLayout || 'list') === 'list') {
-      style.borderLeft = `3px solid ${link.metadata.color}`
-    } else {
-      style.background = `${link.metadata.color}15`
-      style.border = `1px solid ${link.metadata.color}33`
-    }
-  }
-  return style
-}
 </script>
 
 <style scoped>
@@ -321,9 +325,9 @@ const getLinkStyle = (link: any) => {
 
 .card-perspective {
   perspective: 2000px;
-  width: 94%;
-  height: 82%;
-  margin: 20px auto;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
   z-index: 5;
 }
 
@@ -350,12 +354,19 @@ const getLinkStyle = (link: any) => {
 .card-perspective.is-vertical .card-back { transform: rotateX(180deg); }
 
 .glass-card-mockup {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 24px;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
+  border-radius: 36px;
+  box-shadow: 0 40px 80px -20px rgba(0,0,0,0.3);
+}
+
+.back-face {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .phone-name { font-size: 1.1rem; font-weight: 900; }
@@ -376,65 +387,109 @@ const getLinkStyle = (link: any) => {
   transition: transform 0.3s ease;
 }
 
-.links-divider {
-  width: 50%;
-  height: 1px;
-  margin: 0 auto;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+.interest-tag-tiny {
+  font-size: 8px;
+  color: #6366f1;
+  font-weight: 800;
+  opacity: 0.7;
 }
 
-.links-list-clean {
+.links-bento-tiny {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.link-bento-pill-tiny {
+  background: white;
+  border-radius: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-}
-
-.phone-link-btn {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(6px);
-  padding: 10px 12px;
-  display: flex;
   align-items: center;
-  border-radius: 14px;
-  font-size: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.03);
 }
 
-.phone-link-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.12);
+.link-bento-pill-tiny.wide {
+  grid-column: span 2;
+  flex-direction: row;
+  padding: 10px;
 }
 
-.link-icon-wrap {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  border-radius: 10px;
+.phone-bio-tiny {
+  font-size: 9px;
+  line-height: 1.3;
+  color: #64748b;
+  opacity: 0.9;
+}
+
+.links-grid-naked-preview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.link-grid-item-naked-preview {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--icon-color), color-mix(in srgb, var(--icon-color) 70%, #ec4899));
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--icon-color) 35%, transparent);
-  margin-right: 10px;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: rgba(var(--v-theme-primary), 0.04);
 }
 
-.link-title-text {
-  color: #1e293b;
-  flex: 1;
-  min-width: 0;
+.links-divider-minimal {
+  width: 30px;
+  height: 3px;
+  margin: 0 auto 12px;
+  background: rgba(var(--v-theme-primary), 0.2);
+  border-radius: 99px;
 }
 
-.branding-badge {
+.link-item-naked-preview {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.link-title-tiny { font-size: 0.75rem; color: #1e293b; }
+
+.branding-badge-premium {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  background: white;
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 99px;
   font-size: 8px;
-  letter-spacing: 1px;
-  font-weight: 900;
-  color: #64748b;
+  color: white;
+  opacity: 0.6;
+}
+
+.letter-spacing-2 { letter-spacing: 2px; }
+
+.glass-stats-compact {
+  background: transparent;
+}
+
+.branding-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.social-btn-naked-preview {
+  transition: transform 0.3s ease;
+}
+
+.social-btn-naked-preview:hover {
+  transform: scale(1.2);
 }
 
 .custom-scrollbar::-webkit-scrollbar { width: 2px; }

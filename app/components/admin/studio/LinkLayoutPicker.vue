@@ -31,7 +31,8 @@ const emit = defineEmits(['update:modelValue'])
 
 const layouts = [
   { id: 'list', name: '清單', desc: '經典單欄列表', icon: 'mdi-format-list-bulleted' },
-  { id: 'grid', name: '網格', desc: '2x2 社交圖示矩陣', icon: 'mdi-view-grid-outline' },
+  { id: 'grid', name: '網格', desc: '2x2 社交矩陣', icon: 'mdi-view-grid-outline' },
+  { id: 'bento', name: 'Bento', desc: '動態質感版型', icon: 'mdi-apps-box' },
   { id: 'carousel', name: '輪播', desc: '橫向滑動卡片', icon: 'mdi-view-carousel-outline' }
 ]
 
@@ -55,16 +56,19 @@ const selectLayout = (id: string) => {
 }
 .layout-grid {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 .layout-opt {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 12px 16px;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 8px;
   background: #f8fafc;
-  border: 2px solid transparent;
-  border-radius: 16px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
@@ -76,33 +80,37 @@ const selectLayout = (id: string) => {
 .layout-opt.active {
   background: white;
   border-color: #1867c0;
-  box-shadow: 0 4px 12px rgba(24, 103, 192, 0.08);
+  box-shadow: 0 8px 16px rgba(24, 103, 192, 0.06);
 }
 .layout-icon-box {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 .layout-info {
-  flex-grow: 1;
+  width: 100%;
 }
 .layout-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 800;
   color: #1e293b;
+  margin-bottom: 2px;
 }
 .layout-desc {
-  font-size: 12px;
+  font-size: 10px;
   color: #94a3b8;
+  line-height: 1.1;
 }
 .check-icon {
   position: absolute;
-  right: 16px;
+  top: 6px;
+  right: 6px;
+  font-size: 14px;
 }
 </style>

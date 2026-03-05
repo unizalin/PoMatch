@@ -32,7 +32,7 @@
           <div class="card-inner">
             <!-- ── FRONT SIDE ── -->
             <div class="card-front">
-              <div :class="['glass-card-premium px-6 py-8 w-100 h-100 text-center card-reveal premium-blur overflow-hidden d-flex flex-column', profile.theme, { 'wallet-card': isWalletMode }]">
+              <div :class="['glass-card-premium px-8 py-10 w-100 h-100 card-reveal overflow-hidden d-flex flex-column', profile.theme]">
                 <!-- Status -->
                 <div class="d-flex justify-end mb-n6">
                   <v-chip size="x-small" color="success" variant="flat" class="text-caption font-weight-black pulse-indicator">
@@ -41,96 +41,134 @@
                   </v-chip>
                 </div>
 
-                <div class="d-flex align-center gap-6 mb-6 mt-4">
-                  <v-avatar 
-                    size="80" 
-                    class="avatar-border-premium elevation-24"
-                    :style="{ 
-                      borderWidth: `${profile.themeConfig?.profileBorderWidth || 4}px`,
-                      borderRadius: `${profile.themeConfig?.profileBorderRadius || 50}%`
-                    }"
-                  >
-                    <v-img :src="profile.avatar"></v-img>
-                  </v-avatar>
-                  <div class="text-left">
-                    <h1 
-                      class="text-h4 font-weight-black mb-1 text-slate-900 letter-spacing-tight"
-                      :style="{ transform: `scale(${profile.themeConfig?.nameScale || 1.1})`, transformOrigin: 'left' }"
+                <!-- Shared Content Container (Centered + Offset) -->
+                <div class="card-content-front flex-grow-1 d-flex flex-column justify-center align-center">
+                  <div class="profile-hero-section d-flex flex-column align-center gap-6 mt-4 mb-8 text-center">
+                    <div 
+                      class="avatar-container-premium"
+                      :style="{ 
+                        transform: `translate(${profile.themeConfig?.avatarOffset || 0}px, ${profile.themeConfig?.vOffset || 0}px)` 
+                      }"
                     >
-                      {{ profile.name }}
-                    </h1>
-                    <div class="d-flex gap-2">
-                       <v-chip variant="tonal" size="small" color="indigo-accent-2" class="font-weight-black">{{ profile.persona.mbti }}</v-chip>
-                       <v-chip variant="tonal" size="small" color="deep-purple-accent-2" class="font-weight-black">{{ profile.persona.zodiac }}</v-chip>
+                      <v-avatar 
+                        size="90" 
+                        class="avatar-border-premium elevation-24"
+                        :style="{ 
+                          borderWidth: `${profile.themeConfig?.profileBorderWidth || 4}px`,
+                          borderRadius: `${profile.themeConfig?.profileBorderRadius || 50}%`
+                        }"
+                      >
+                        <v-img :src="profile.avatar"></v-img>
+                      </v-avatar>
+                    </div>
+
+                    <div 
+                      class="text-center w-100"
+                      :style="{ 
+                        transform: `translate(${profile.themeConfig?.textOffset || 0}px, ${profile.themeConfig?.textVOffset || 0}px)` 
+                      }"
+                    >
+                      <h1 
+                        class="text-h4 font-weight-black mb-4 text-slate-900 letter-spacing-tight"
+                        :style="{ 
+                          transform: `scale(${profile.themeConfig?.nameScale || 1.1})`, 
+                          transformOrigin: 'center'
+                        }"
+                      >
+                        {{ profile.name || '@' + profile.username }}
+                      </h1>
+                      
+                      <!-- Identity DNA -->
+                      <div class="d-flex flex-wrap justify-center gap-2 mb-4">
+                         <v-chip variant="tonal" size="x-small" color="indigo-accent-2" class="font-weight-black profile-dna-chip">
+                           <v-icon start size="12">mdi-dna</v-icon>{{ profile.persona.mbti }}
+                         </v-chip>
+                         <v-chip variant="tonal" size="x-small" color="deep-purple-accent-2" class="font-weight-black profile-dna-chip">
+                           <v-icon start size="12">mdi-zodiac-cancer</v-icon>{{ profile.persona.zodiac }}
+                         </v-chip>
+                      </div>
+
+                      <!-- Interest Tags -->
+                      <div v-if="profile.persona?.tags?.length" class="d-flex flex-wrap justify-center gap-3 mb-6">
+                        <span v-for="tag in profile.persona.tags" :key="tag" class="interest-tag-mini text-uppercase">
+                          #{{ tag }}
+                        </span>
+                      </div>
+
+                      <!-- Bio Description -->
+                      <p v-if="profile.description" class="profile-bio-text mb-0 opacity-80 font-weight-medium line-clamp-2">
+                        {{ profile.description }}
+                      </p>
                     </div>
                   </div>
-                </div>
-                
+                  
+                  <!-- Social Icons Row -->
+                  <div v-if="profile.socialLinks?.length" class="social-icons-front d-flex justify-center gap-3 mb-5">
+                    <v-btn
+                      v-for="social in profile.socialLinks"
+                      :key="social.platform"
+                      icon
+                      :color="social.color"
+                      variant="text"
+                      size="48"
+                      class="social-icon-btn-clean"
+                      @click.stop="openLink(social.url)"
+                    >
+                      <v-icon size="28">{{ social.icon }}</v-icon>
+                    </v-btn>
+                  </div>
 
-
-                <!-- Social Icons Row -->
-                <div v-if="profile.socialLinks?.length" class="social-icons-front d-flex justify-center gap-3 mb-5">
-                  <v-btn
-                    v-for="social in profile.socialLinks"
-                    :key="social.platform"
-                    icon
-                    :color="social.color"
-                    variant="flat"
-                    size="42"
-                    class="social-icon-btn elevation-4"
-                    @click.stop="openLink(social.url)"
-                  >
-                    <v-icon size="22">{{ social.icon }}</v-icon>
-                  </v-btn>
-                </div>
-
-                <!-- Action Links on Front (always list mode) -->
-                <div class="links-section-divider mb-4"></div>
-                <div class="flex-grow-1 overflow-hidden d-flex flex-column">
-                  <div class="back-scroll-area flex-grow-1 pr-1 custom-scrollbar overflow-y-auto">
-                    <div v-if="profile.actionLinks?.length" class="links-list-clean">
-                      <div 
-                        v-for="link in profile.actionLinks" 
-                        :key="link.id" 
-                        class="mb-3 w-100"
-                      >
-                        <BlockProductGrid 
-                          v-if="link.metadata?.block_type === 'product_grid'"
-                          :title="link.title"
-                          :items="link.metadata?.items"
-                        ></BlockProductGrid>
-
-                        <BlockSchedule
-                          v-else-if="link.metadata?.block_type === 'schedule_list'"
-                          :title="link.title"
-                          :days="link.metadata?.days"
-                        ></BlockSchedule>
-
-                        <BlockService
-                          v-else-if="link.metadata?.block_type === 'service_card'"
-                          :title="link.title"
-                          :details="link.metadata?.details"
-                          :tag="link.metadata?.tag"
-                        ></BlockService>
-
-                        <div
-                          v-else
-                          class="link-item-premium"
+                  <!-- Action Links -->
+                  <div class="links-section-minimal mb-4"></div>
+                  <div class="overflow-hidden d-flex flex-column" style="max-height: 300px;">
+                    <div class="back-scroll-area pr-1 custom-scrollbar overflow-y-auto">
+                      <div v-if="profile.themeConfig?.linkLayout === 'bento'" class="links-grid-bento">
+                        <div 
+                          v-for="(link, index) in profile.actionLinks" 
+                          :key="link.id"
+                          class="link-bento-item"
+                          :class="{ 'bento-wide': index % 3 === 0 }"
                           :style="getLinkStyle(link)"
                           @click.stop="recordClick(link.id); openLink(link.url)"
                         >
-                          <div class="link-icon-wrap" :style="{ '--icon-color': link.metadata?.color || '#6366f1' }">
-                            <v-icon size="20" color="white">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          <v-icon :size="index % 3 === 0 ? 32 : 24" :color="link.metadata?.color || 'primary'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          <div class="link-bento-content">
+                            <div class="link-bento-title">{{ link.title }}</div>
+                            <div v-if="index % 3 === 0 && link.url && link.url !== '#'" class="link-bento-url opacity-40">{{ link.url }}</div>
                           </div>
-                          <span class="link-title-text font-weight-bold text-truncate">{{ link.title }}</span>
-                          <v-icon size="16" class="link-chevron">mdi-chevron-right</v-icon>
+                        </div>
+                      </div>
+                      <div v-else-if="profile.themeConfig?.linkLayout === 'grid'" class="links-grid-naked">
+                        <div 
+                          v-for="(link, index) in profile.actionLinks" 
+                          :key="link.id"
+                          class="link-grid-item-naked"
+                          @click.stop="recordClick(link.id); openLink(link.url)"
+                        >
+                          <v-icon size="32" :color="link.metadata?.color || 'primary'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          <span class="link-grid-title-naked mt-1 text-truncate">{{ link.title }}</span>
+                        </div>
+                      </div>
+                      <div v-else class="links-list-naked">
+                        <div 
+                          v-for="(link, index) in profile.actionLinks" 
+                          :key="link.id"
+                          class="link-item-naked"
+                          @click.stop="recordClick(link.id); openLink(link.url)"
+                        >
+                          <div class="link-icon-naked">
+                            <v-icon size="24" :color="link.metadata?.color || 'primary'">{{ link.icon || 'mdi-link-variant' }}</v-icon>
+                          </div>
+                          <div class="link-content-naked">
+                            <div class="link-title-naked">{{ link.title }}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="flip-hint mt-auto opacity-50 text-center">
+                <div class="flip-hint mt-auto opacity-50 text-center pb-2">
                   <v-icon size="14" class="mr-2">mdi-rotate-3d-variant</v-icon>
                   <span class="text-caption font-weight-bold">翻轉查看數據</span>
                 </div>
@@ -139,50 +177,56 @@
 
             <!-- ── BACK SIDE ── -->
             <div class="card-back">
-              <div :class="['glass-card-premium px-8 py-10 w-100 h-100 card-reveal premium-blur overflow-hidden d-flex flex-column align-center', profile.theme]">
+              <div :class="['glass-card-premium px-8 py-10 w-100 h-100 card-reveal premium-blur d-flex flex-column align-center justify-center', profile.theme]">
                 <!-- Stats Area -->
-                <div class="w-100 mb-10 mt-6">
-                  <div class="glass-stats-row border-light d-flex rounded-2xl overflow-hidden py-6 bg-white-opacity-5">
-                    <div class="flex-grow-1 border-end text-center">
-                      <div class="text-h4 font-weight-black text-indigo-accent-2">{{ displayScore }}%</div>
-                      <div class="text-caption text-slate-400 font-weight-black uppercase">契合度</div>
+                <div class="w-100 mb-12">
+                  <div class="glass-stats-minimal d-flex justify-space-around py-8">
+                    <div class="text-center">
+                      <div class="text-h4 font-weight-black text-slate-900 mb-1">{{ profile.interactiveStats?.matchScore || 88 }}%</div>
+                      <div class="text-caption font-weight-bold text-slate-500 uppercase letter-spacing-1">契合度</div>
                     </div>
-                    <div class="flex-grow-1 border-end text-center">
-                      <div class="text-h4 font-weight-black text-slate-800">{{ formatNumber(profile.interactiveStats.likes) }}</div>
-                      <div class="text-caption text-slate-400 font-weight-black uppercase">喜歡</div>
+                    <div class="stats-divider"></div>
+                    <div class="text-center">
+                      <div class="text-h4 font-weight-black text-slate-900 mb-1">{{ profile.interactiveStats?.likes || 0 }}</div>
+                      <div class="text-caption font-weight-bold text-slate-500 uppercase letter-spacing-1">喜歡</div>
                     </div>
-                    <div class="flex-grow-1 text-center">
-                      <div class="text-h4 font-weight-black text-slate-800">{{ formatNumber(profile.interactiveStats.followers) }}</div>
-                      <div class="text-caption text-slate-400 font-weight-black uppercase">追蹤</div>
+                    <div class="stats-divider"></div>
+                    <div class="text-center">
+                      <div class="text-h4 font-weight-black text-slate-900 mb-1">{{ profile.interactiveStats?.followers || 0 }}</div>
+                      <div class="text-caption font-weight-bold text-slate-500 uppercase letter-spacing-1">追蹤</div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Simulation Chip/Stripe -->
-                <div class="mb-10 w-100 d-flex justify-end opacity-20 px-4">
-                  <div class="bg-indigo-accent-1 rounded-md" style="width: 60px; height: 40px;"></div>
+                <!-- Branding Centerpiece -->
+                <div class="branding-ring-premium mb-12">
+                   <div class="ring-outer pulse-slow"></div>
+                   <div class="ring-inner">
+                     <v-icon size="48" color="primary" class="opacity-40">mdi-face-recognition</v-icon>
+                   </div>
                 </div>
 
-                <!-- Social Center Row -->
-                <div class="social-row-premium d-flex justify-center flex-wrap gap-6 mb-12">
+                <!-- Social Row - Centered & Premium -->
+                <div class="social-row-naked d-flex justify-center flex-wrap gap-6 mb-8">
                   <v-btn
                     v-for="social in (profile.socialLinks || [])"
                     :key="social.platform"
                     icon
                     :color="social.color"
-                    variant="flat"
+                    variant="text"
                     size="56"
-                    class="social-btn-premium elevation-12"
+                    class="social-btn-premium transition-bounce"
+                    @click.stop="openLink(social.url)"
                   >
-                    <v-icon size="28">{{ social.icon }}</v-icon>
+                    <v-icon size="32">{{ social.icon }}</v-icon>
                   </v-btn>
                 </div>
 
                 <div class="branding-pill mt-auto">
                   <v-icon size="14" class="mr-2" color="primary">mdi-rocket-launch</v-icon>
-                  <span class="font-weight-black uppercase">POWERED BY POMATCH</span>
+                  <span class="font-weight-black">POMATCH</span>
                 </div>
-              </div> <!-- end glass BACK -->
+              </div>
             </div> <!-- end card-back -->
           </div> <!-- end card-inner -->
         </div> <!-- end card-perspective -->
@@ -263,7 +307,7 @@ const exportVCard = () => {
 }
 
 const recordClick = async (linkId: string | number) => {
-  await store.recordClick(linkId)
+  await store.recordClick(linkId);
 }
 
 const openLink = (url: string) => {
@@ -290,7 +334,7 @@ const getLinkStyle = (link: any) => {
 }
 
 const onLike = () => {
-  if (profile.value) store.incrementLike(profile.value.id)
+  if (profile.value) store.incrementLike()
 }
 </script>
 
@@ -338,6 +382,7 @@ const onLike = () => {
   height: calc(100dvh - 32px);
   margin: 16px auto;
   cursor: pointer;
+  position: relative;
 }
 
 .card-inner {
@@ -358,27 +403,50 @@ const onLike = () => {
 
 .card-front, .card-back {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transition: z-index 0s step-end 0.4s;
 }
-
+.card-front {
+  z-index: 2;
+  transform: rotateY(0deg);
+}
 .card-back {
+  z-index: 1;
   transform: rotateY(180deg);
 }
-
+.card-perspective.is-flipped .card-front {
+  z-index: 1;
+}
+.card-perspective.is-flipped .card-back {
+  z-index: 2;
+}
 .card-perspective.is-vertical .card-back {
   transform: rotateX(180deg);
 }
 
 .glass-card-premium {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-  border-radius: 40px;
+  border-radius: 48px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-card-premium.theme-dark {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .max-width-mobile {
@@ -465,88 +533,173 @@ const onLike = () => {
   aspect-ratio: 1;
 }
 
-.social-icon-btn {
-  border-radius: 50% !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.profile-dna-chip {
+  letter-spacing: 0.05em;
+  font-size: 10px !important;
+  height: 22px !important;
 }
 
-.social-icon-btn:hover {
-  transform: scale(1.15) translateY(-2px);
+.interest-tag-mini {
+  font-size: 10px;
+  color: #6366f1;
+  font-weight: 700;
+  opacity: 0.8;
 }
 
-.links-section-divider {
-  width: 60%;
-  height: 1px;
-  margin: 0 auto;
-  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), transparent);
+.profile-bio-text {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #475569;
 }
 
-.links-list-clean {
+.avatar-container-premium {
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.avatar-container-premium:hover {
+  transform: scale(1.05) rotate(-3deg);
+}
+
+.links-grid-naked {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.link-grid-item-naked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 8px;
+  border-radius: 16px;
+}
+
+.link-grid-item-naked:hover {
+  background: rgba(var(--v-theme-primary), 0.06);
+  transform: translateY(-4px);
+}
+
+.link-grid-title-naked {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  width: 100%;
+  text-align: center;
+}
+
+.links-section-minimal {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 24px;
+  background: rgba(var(--v-theme-primary), 0.2);
+  border-radius: 99px;
+}
+
+.links-list-naked {
   display: flex;
   flex-direction: column;
 }
 
-.link-item-premium {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 14px 16px;
+.link-item-naked {
+  padding: 16px 8px;
   display: flex;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   cursor: pointer;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
 }
 
-.link-item-premium:hover {
-  transform: translateY(-3px) scale(1.01);
-  background: white;
-  box-shadow: 0 12px 28px rgba(99, 102, 241, 0.15);
-  border-color: rgba(99, 102, 241, 0.2);
+.link-item-naked:hover {
+  background: rgba(var(--v-theme-primary), 0.04);
+  transform: translateX(4px);
 }
 
-.link-item-premium:active {
-  transform: translateY(-1px) scale(0.99);
-}
-
-.link-icon-wrap {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--icon-color), color-mix(in srgb, var(--icon-color) 70%, #ec4899));
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--icon-color) 40%, transparent);
-  margin-right: 14px;
-  transition: transform 0.3s ease;
-}
-
-.link-item-premium:hover .link-icon-wrap {
-  transform: scale(1.08) rotate(-3deg);
-}
-
-.link-title-text {
-  font-size: 0.95rem;
-  line-height: 1.3;
+.link-title-text-naked {
+  font-size: 1.05rem;
   color: #1e293b;
-  flex: 1;
-  min-width: 0;
+  letter-spacing: 0.5px;
 }
 
-.link-chevron {
-  color: #cbd5e1;
-  transition: transform 0.3s ease, color 0.3s ease;
-  flex-shrink: 0;
+.glass-stats-minimal {
+  background: transparent;
 }
 
-.link-item-premium:hover .link-chevron {
-  color: #6366f1;
-  transform: translateX(3px);
+.glow-text {
+  text-shadow: 0 0 20px rgba(255,255,255,0.3);
 }
+
+.social-btn-naked {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.social-btn-naked:hover {
+  transform: scale(1.3) rotate(5deg);
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.tracking-widest { letter-spacing: 0.2em; }
+.letter-spacing-4 { letter-spacing: 4px; }
+
+.border-white-10 { border-color: rgba(255,255,255,0.1) !important; }
+
+/* Custom Scrollbar for clean look */
+/* Bento Grid Styles */
+.links-grid-bento {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.link-bento-item {
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.link-bento-item:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  border-color: rgba(var(--v-theme-primary), 0.2);
+}
+
+.link-bento-item.bento-wide {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  padding: 20px;
+}
+
+.link-bento-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.link-bento-url {
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
 
 
 </style>

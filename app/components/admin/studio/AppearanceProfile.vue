@@ -71,6 +71,54 @@
         ></v-slider>
       </div>
 
+      <div class="control-row mb-4">
+        <div class="control-label">大頭貼上下微調 (Avatar Y-Offset)</div>
+        <v-slider
+          v-model="store.profile.themeConfig.vOffset"
+          min="-50"
+          max="50"
+          step="1"
+          hide-details
+          color="deep-purple-accent-2"
+        ></v-slider>
+      </div>
+
+      <div class="control-row mb-4">
+        <div class="control-label">文字內容上下微調 (Text Y-Offset)</div>
+        <v-slider
+          v-model="store.profile.themeConfig.textVOffset"
+          min="-50"
+          max="50"
+          step="1"
+          hide-details
+          color="indigo-lighten-2"
+        ></v-slider>
+      </div>
+
+      <div class="control-row mb-4">
+        <div class="control-label">大頭貼左右微調 (Avatar X-Offset)</div>
+        <v-slider
+          v-model="store.profile.themeConfig.avatarOffset"
+          min="-40"
+          max="40"
+          step="1"
+          hide-details
+          color="primary"
+        ></v-slider>
+      </div>
+
+      <div class="control-row mb-4">
+        <div class="control-label">文字內容左右微調 (Text X-Offset)</div>
+        <v-slider
+          v-model="store.profile.themeConfig.textOffset"
+          min="-40"
+          max="40"
+          step="1"
+          hide-details
+          color="indigo"
+        ></v-slider>
+      </div>
+
       <div class="control-row">
         <div class="control-label">垂直間距 (Gap)</div>
         <v-slider

@@ -6,8 +6,8 @@ import type { Database, Profile as DbProfile } from '~/types/database.types'
 const mapDbProfile = (d: any) => ({
     id: d.id,
     username: d.username,
-    name: d.full_name || '未命名',
-    description: d.description || '',
+    name: d.full_name || 'PoMatch 使用者',
+    description: d.description || '探索數位名片的無限可能 ✨',
     avatar: d.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.username}`,
     theme: d.theme || 'glassmorphism',
     themeConfig: d.theme_config || {
@@ -23,18 +23,22 @@ const mapDbProfile = (d: any) => ({
         linkGap: 8,
         linkHoverScale: 1.02,
         linkGlow: true,
-        linkLayout: 'list'
+        linkLayout: 'list',
+        vOffset: 0,
+        avatarOffset: 0,
+        textOffset: 0,
+        textVOffset: 0
     },
     persona: {
-        mbti: d.mbti || 'UNKNOWN',
-        zodiac: d.zodiac || 'UNKNOWN',
+        mbti: d.mbti || 'ENFP',
+        zodiac: d.zodiac || '雙子座',
         location: d.location || '',
-        tags: d.tags || []
+        tags: d.tags || ['數位遊牧', '產品設計', '極簡主義']
     },
     interactiveStats: {
-        matchScore: d.match_score || 0,
-        likes: d.likes_count || 0,
-        followers: d.followers_count || 0
+        matchScore: d.match_score || 88,
+        likes: d.likes_count || 128,
+        followers: d.followers_count || 256
     }
 })
 
@@ -62,19 +66,23 @@ export const useProfileStore = defineStore('profile', {
                 linkHoverScale: 1.02,
                 linkGlow: true,
                 linkLayout: 'list',
-                cardMode: false,
+                vOffset: 0,
+                avatarOffset: 0,
+                textOffset: 0,
+                textVOffset: 0,
+                cardMode: true,
                 flipDirection: 'horizontal'
             },
             persona: {
-                mbti: 'UNKNOWN',
-                zodiac: 'UNKNOWN',
+                mbti: 'ENFP',
+                zodiac: '雙子座',
                 location: '',
-                tags: [] as string[]
+                tags: ['數位遊牧', '產品設計', '極簡主義']
             },
             interactiveStats: {
-                matchScore: 0,
-                likes: 0,
-                followers: 0
+                matchScore: 88,
+                likes: 128,
+                followers: 256
             },
             socialLinks: [] as any[],
             actionLinks: [] as any[]
@@ -99,8 +107,8 @@ export const useProfileStore = defineStore('profile', {
             const profile = state.profile
             if (state.analytics && state.analytics.totalVisitors > 0) return state.analytics
             const seed = (profile.id && typeof profile.id === 'string') ? profile.id.split('-')[0].length : 10
-            const likesCount = profile.interactiveStats?.likes || 0
-            const followersCount = profile.interactiveStats?.followers || 0
+            const likesCount = profile.interactiveStats?.likes ?? 0
+            const followersCount = profile.interactiveStats?.followers ?? 0
             const baseVisitors = (likesCount * 15) + (followersCount * 5) + (seed * 85)
             const baseViews = baseVisitors * 2.4
             const ctr = ((likesCount + 10) / (baseVisitors + 100) * 100).toFixed(1) + '%'
@@ -228,6 +236,13 @@ export const useProfileStore = defineStore('profile', {
             const { error } = await client.from('profiles').upsert(dbPayload)
             return { error }
         },
+        async debouncedUpdateProfile(newData: any) {
+            if (this._sortTimeout) clearTimeout(this._sortTimeout)
+            this._sortTimeout = setTimeout(async () => {
+                await this.updateProfile(newData)
+                this._sortTimeout = null
+            }, 1000)
+        },
         async addLink(link: any) {
             const client = useSupabaseClient<Database>()
             const { data: { session } } = await client.auth.getSession()
@@ -254,7 +269,7 @@ export const useProfileStore = defineStore('profile', {
                 .single()
 
             if (data) {
-                this.profile.actionLinks.push(data as any)
+                (this.profile.actionLinks as any[]).push(data as any)
                 this.takeSnapshot()
             }
             return { data, error }
@@ -306,7 +321,7 @@ export const useProfileStore = defineStore('profile', {
             const client = useSupabaseClient<Database>()
             const { error } = await client.from('links').update({ metadata } as any).eq('id', linkId)
             if (!error) {
-                const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
+                const link = (this.profile.actionLinks as any[]).find(l => String(l.id) === String(linkId))
                 if (link) link.metadata = { ...link.metadata, ...metadata }
             }
             return { error }
@@ -315,13 +330,13 @@ export const useProfileStore = defineStore('profile', {
             const client = useSupabaseClient<Database>()
             const { error } = await client.from('links').delete().eq('id', linkId)
             if (!error) {
-                this.profile.actionLinks = this.profile.actionLinks.filter(l => String(l.id) !== String(linkId))
+                (this.profile.actionLinks as any[]) = (this.profile.actionLinks as any[]).filter(l => String(l.id) !== String(linkId))
                 await this.updateLinkSortOrder()
             }
         },
         async updateLinkSortOrder() {
             const client = useSupabaseClient<Database>()
-            const updates = this.profile.actionLinks.map((link: any, index: number) => (
+            const updates = (this.profile.actionLinks as any[]).map((link: any, index: number) => (
                 client.from('links').update({ sort_order: index } as any).eq('id', link.id)
             ))
             await Promise.all(updates)
@@ -335,9 +350,9 @@ export const useProfileStore = defineStore('profile', {
             }, 500)
         },
         async recordClick(linkId: string | number) {
-            const link = this.profile.actionLinks.find(l => String(l.id) === String(linkId))
+            const link = (this.profile.actionLinks as any[]).find(l => String(l.id) === String(linkId))
             if (link) {
-                link.clicks++
+                link.clicks = (link.clicks || 0) + 1
                 this.analytics.totalViews++
             }
         },
@@ -365,9 +380,11 @@ export const useProfileStore = defineStore('profile', {
             const { error } = await client.from('profiles').insert({
                 id: authUser.id,
                 username: id.toLowerCase(),
-                full_name: '新用戶',
-                mbti: 'UNKNOWN',
-                zodiac: 'UNKNOWN',
+                full_name: 'PoMatch 使用者',
+                description: '探索數位名片的無限可能 ✨',
+                mbti: 'ENFP',
+                zodiac: '雙子座',
+                tags: ['數位遊牧', '產品設計', '極簡主義'],
                 role: 'user'
             } as any)
             if (!error) {

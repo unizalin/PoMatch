@@ -181,8 +181,8 @@ const user = useSupabaseUser()
 const userEmail = computed(() => user.value?.email?.split('@')[0] || 'user')
 
 const contentItems = [
-  { id: 'content-links', label: '連結', icon: 'mdi-link-variant', component: ContentLinks },
   { id: 'content-profile', label: '個人簡介', icon: 'mdi-account-outline', component: ContentProfile },
+  { id: 'content-links', label: '連結', icon: 'mdi-link-variant', component: ContentLinks },
 ]
 
 const appearanceItems = [
@@ -191,7 +191,7 @@ const appearanceItems = [
   { id: 'appearance-links', label: '連結樣式', icon: 'mdi-format-list-bulleted-type', component: AppearanceLinks },
 ]
 
-const activeTab = ref('content-links')
+const activeTab = ref('content-profile')
 const mobilePreviewDialog = ref(false)
 
 // ── 手動儲存與歷史紀錄邏輯 ──
