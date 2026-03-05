@@ -63,7 +63,7 @@
           @click="handleAdd"
         >
           儲存連結
-        </v-badge>
+        </v-btn>
       </div>
     </v-card>
   </v-dialog>
