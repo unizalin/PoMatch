@@ -1,7 +1,7 @@
 # PoMatch 專案規格文件 (SPEC)
 
 > **用途**：供 AI 助手快速了解專案現狀。每次功能完成後更新。
-> **最後更新**：2026-03-04
+> **最後更新**：2026-03-06
 
 ---
 
@@ -25,7 +25,7 @@
 | 路由 | 檔案 | 用途 | SSR |
 |---|---|---|---|
 | `/` | `pages/index.vue` | 首頁/Landing Page | ✅ |
-| `/:id` | `pages/[id].vue` | 公開個人名片頁 | ✅ |
+| `/:id` | `pages/[id].vue` | 公開個人名片頁 (支援 3D 翻轉) | ✅ |
 | `/explore` | `pages/explore.vue` | 探索/瀏覽所有名片 | ✅ |
 | `/login` | `pages/login.vue` | 登入頁 | ❌ |
 | `/register` | `pages/register.vue` | 註冊頁 | ❌ |
@@ -53,15 +53,15 @@
 
 | 元件 | 用途 |
 |---|---|
-| `StudioPreview.vue` | 即時預覽（WYSIWYG，與 `[id].vue` 同步）+ RWD 裝置切換 (iPhone SE/14/iPad) |
+| `StudioPreview.vue` | 即時預覽（與 `[id].vue` 同步）+ RWD 與 **3D 翻轉測試** |
 | `ContentProfile.vue` | 編輯個人資料（名稱、描述、頭像、Persona） |
-| `ContentLinks.vue` | 管理行動連結（新增/刪除/排序/樣式）+ URL 自動偵測 Icon |
+| `ContentLinks.vue` | 管理行動連結（支援 Bento Grid 模式預覽） |
 | `AppearanceBackground.vue` | 背景設定（Aurora、玻璃質感、顆粒） |
 | `AppearanceLinks.vue` | 連結外觀設定（間距、圓角、動畫） |
-| `AppearanceProfile.vue` | 個人資料外觀（頭像邊框、發光效果） |
+| `AppearanceProfile.vue` | **進階對齊控制 (Avatar X/Y, Text X/Y)** |
 | `AppearanceTemplates.vue` | 主題模板選擇 |
 | `LinkStyleDialog.vue` | 單一連結的進階樣式彈窗 |
-| `LinkLayoutPicker.vue` | 連結佈局選擇器（List/Grid/Carousel） |
+| `LinkLayoutPicker.vue` | 連結佈局選擇器（List/Grid/Bento） |
 
 ## 狀態管理 (Pinia Store)
 
@@ -69,6 +69,9 @@
 
 **State 重點欄位**：
 - `profile` — 當前載入的使用者資料
+- `themeConfig` — 包含 `vOffset`, `avatarOffset`, `textOffset`, `textVOffset` 進階控制
+- `persona` — 包含 MBTI, Zodiac, Tags (Golden Defaults: ENFP/雙子座)
+- `interactiveStats` — 點讚、追蹤、契合度數據
 - `isDirty` — 是否有未儲存的變更
 - `history[]` / `historyIndex` — Undo/Redo 歷史快照
 
@@ -83,7 +86,7 @@
 | `updateLinkMetadata(linkId, metadata)` | 更新連結的進階樣式 |
 | `takeSnapshot()` | 建立歷史快照（用於 Undo） |
 | `undo()` / `redo()` | 撤銷/重做 |
-| `handleRegister(id)` | 註冊新使用者 |
+| `handleRegister(id)` | 註冊新使用者 (帶入 Golden Defaults) |
 | `hasProfile(userId)` | 檢查是否已建立 Profile |
 | `fetchAllProfiles()` | 讀取所有 Profile（探索頁用） |
 | `calculateMatch(otherPersona)` | 計算配對分數 |
@@ -110,32 +113,32 @@
 
 - **Glassmorphism**：玻璃質感卡片 (`backdrop-filter: blur`)
 - **Aurora Background**：漸層動態背景
-- **Bento Grid**：網格佈局（連結卡片）
-- **Premium Link Items**：連結按鈕的高級視覺效果
+- **Bento Grid**：現代化網格佈局 (Action Links)
+- **3D Card Flip**：正反面翻轉互動 (Front: Persona / Back: Stats)
+- **Golden Defaults**：新用戶的預設高級視覺配置
 - **Grain Overlay**：顆粒紋理覆蓋層
 
 ## 關鍵模板結構：`[id].vue`
 
-```
+```html
 <template>
   <div.profile-container>
     <div.aurora-bg />
     <div.grain-overlay />
     <v-fade-transition>
-      <div.glass-card-premium>          ← 主卡片容器
-        <div.wallet-header />           ← (可選) 錢包模式頭部
-        <div.status-indicator />
-        <div.avatar-container />
-        <h1 /> <p />                    ← 名稱、描述
-        <div.bento-stats />             ← 數據統計
-        <div.links-container-premium>   ← 連結容器
-          <v-btn v-for>                 ← 每個連結
-            <template v-if="list">      ← List 佈局
-            <template v-else>           ← Grid/Carousel 佈局
-          </v-btn>
+      <div.card-perspective>            ← 3D 翻轉容器
+        <div.card-inner>
+          <div.card-front>              ← 正面：Hero & Links
+            <div.avatar-container />    ← 支援 X/Y Offset
+            <div.text-container />      ← 支援 X/Y Offset
+            <div.links-section />       ← 支援 List/Bento
+          </div.card-front>
+          <div.card-back>               ← 反面：互動數據 (Stats)
+            <div.stats-grid />          ← 契合度、喜歡、追蹤
+            <div.branding-pill />
+          </div.card-back>
         </div>
-        <div.branding-pill />           ← 品牌 Footer
-      </div>
+      </div.card-perspective>
     </v-fade-transition>
   </div>
 </template>
