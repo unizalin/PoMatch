@@ -24,5 +24,8 @@
   "devDependencies": {
     "@nuxtjs/supabase": "^2.0.4",
     "sass": "^1.97.3"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
   }
 }
