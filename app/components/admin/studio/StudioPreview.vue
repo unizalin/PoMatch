@@ -249,14 +249,14 @@ import { useProfileStore } from '~/stores/profile'
 
 const store = useProfileStore()
 const profile = computed(() => store.profile)
-const isFlipped = ref(store.currentFlipSide === 'back')
 
-watch(() => store.currentFlipSide, (side) => {
-  isFlipped.value = (side === 'back')
-})
-
-watch(isFlipped, (flipped) => {
-  store.currentFlipSide = flipped ? 'back' : 'front'
+// Simplify to use store as single source of truth
+const isFlipped = computed({
+  get: () => store.currentFlipSide === 'back',
+  set: (val: boolean) => {
+    console.log('[PoMatch Debug] StudioPreview: Setting flip side to', val ? 'back' : 'front')
+    store.currentFlipSide = val ? 'back' : 'front'
+  }
 })
 
 const devices = [

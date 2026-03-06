@@ -166,6 +166,7 @@ export const useProfileStore = defineStore('profile', {
         },
 
         async fetchProfile(identifier: string, isById: boolean = false) {
+            console.log(`[PoMatch Debug] fetchProfile started. identifier: ${identifier}, isById: ${isById}`)
             this.loading = true
             const client = useSupabaseClient<Database>()
             try {
@@ -181,7 +182,12 @@ export const useProfileStore = defineStore('profile', {
                     .order('sort_order', { foreignTable: 'links', ascending: true })
                     .maybeSingle()
 
+                if (error) {
+                    console.error('[PoMatch Debug] fetchProfile error:', error)
+                }
+
                 if (data) {
+                    console.log('[PoMatch Debug] fetchProfile success: Data found')
                     const mapped = mapDbProfile(data)
                     this.profile = {
                         ...this.profile,
@@ -192,11 +198,19 @@ export const useProfileStore = defineStore('profile', {
                     this.historyStack = [JSON.stringify({ profile: this.profile })]
                     this.historyIndex = 0
                     this.isDirty = false
-                    this.hasCheckedProfile = true
+                } else {
+                    console.warn('[PoMatch Debug] fetchProfile: No profile found for this user.')
                 }
+
+                this.hasCheckedProfile = true
                 return { data, error }
+            } catch (err: any) {
+                console.error('[PoMatch Debug] fetchProfile catastrophic error:', err)
+                this.hasCheckedProfile = true
+                return { data: null, error: err }
             } finally {
                 this.loading = false
+                console.log('[PoMatch Debug] fetchProfile finished.')
             }
         },
         setFlipSide(side: 'front' | 'back') {
@@ -376,14 +390,18 @@ export const useProfileStore = defineStore('profile', {
             return !data && !error
         },
         async hasProfile(userId: string) {
+            console.log(`[PoMatch Debug] hasProfile check for: ${userId}. hasCheckedProfile: ${this.hasCheckedProfile}`)
             if (this.hasCheckedProfile) return true
             const client = useSupabaseClient<Database>()
-            const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle()
-            if (data) {
-                this.hasCheckedProfile = true
-                return true
+            const { data, error } = await client.from('profiles').select('id').eq('id', userId).maybeSingle()
+
+            if (error) {
+                console.error('[PoMatch Debug] hasProfile error:', error)
             }
-            return false
+
+            this.hasCheckedProfile = true
+            console.log(`[PoMatch Debug] hasProfile result: ${!!data}`)
+            return !!data
         },
         async handleRegister(id: string) {
             const client = useSupabaseClient<Database>()

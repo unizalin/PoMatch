@@ -162,9 +162,6 @@
         </div>
       </v-card>
     </v-dialog>
-
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 

@@ -167,10 +167,19 @@
     </v-main>
     
     <!-- Loading Overlay -->
-    <v-overlay :model-value="!store.hasCheckedProfile && store.loading" class="align-center justify-center" persistent>
+    <v-overlay :model-value="showLoading" class="align-center justify-center" persistent>
       <div class="d-flex flex-column align-center">
         <v-progress-circular indeterminate color="primary" size="64" width="6"></v-progress-circular>
-        <div class="mt-4 text-h6 font-weight-black text-white">初始化資料中...</div>
+        <div class="mt-4 text-h6 font-weight-black text-white">{{ loadingText }}</div>
+        <v-btn 
+          v-if="showForceEnter" 
+          variant="tonal" 
+          color="white" 
+          class="mt-4 font-weight-bold" 
+          @click="forceEnter"
+        >
+          強制進入 (若卡住)
+        </v-btn>
       </div>
     </v-overlay>
   </v-app>
@@ -193,22 +202,66 @@ const previewProfile = computed(() => store.profile)
 const previewLinks = computed(() => store.profile.actionLinks?.slice(0, 6) || [])
 
 const handleLogout = async () => {
+  console.log('[PoMatch Debug] Logout initiated.')
   await client.auth.signOut()
   router.push('/login')
 }
 
-// ── Profile Initialization ──
-onMounted(async () => {
-  if (user.value?.id && !store.hasCheckedProfile) {
-    await store.fetchProfile(user.value.id, true)
+// ── Profile Initialization & Robustness ──
+const showForceEnter = ref(false)
+const loadingText = ref('初始化資料中...')
+const showLoading = computed(() => !store.hasCheckedProfile && store.loading)
+
+let timeoutId: any = null
+
+const startTimeout = () => {
+  if (timeoutId) clearTimeout(timeoutId)
+  timeoutId = setTimeout(() => {
+    if (showLoading.value) {
+      console.warn('[PoMatch Debug] Admin loading timeout reached (5s). Showing force enter option.')
+      showForceEnter.value = true
+      loadingText.value = '連線似乎較慢...'
+    }
+  }, 5000)
+}
+
+const forceEnter = () => {
+  console.log('[PoMatch Debug] User clicked force enter.')
+  store.hasCheckedProfile = true
+  showForceEnter.value = false
+}
+
+const initProfile = async () => {
+  if (!user.value?.id) {
+    console.log('[PoMatch Debug] initProfile: No user yet.')
+    return
   }
+  if (store.hasCheckedProfile) {
+    console.log('[PoMatch Debug] initProfile: Already checked profile.')
+    return
+  }
+  
+  console.log('[PoMatch Debug] initProfile starting for user:', user.value.id)
+  startTimeout()
+  await store.fetchProfile(user.value.id, true)
+  if (timeoutId) clearTimeout(timeoutId)
+}
+
+onMounted(() => {
+  console.log('[PoMatch Debug] Admin layout mounted.')
+  initProfile()
 })
 
-watch(user, async (newUser) => {
-  if (newUser?.id && !store.hasCheckedProfile) {
-    await store.fetchProfile(newUser.id, true)
+watch(user, (newUser) => {
+  if (newUser?.id) {
+    console.log('[PoMatch Debug] User object updated, re-evaluating init.')
+    initProfile()
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (timeoutId) clearTimeout(timeoutId)
+})
 </script>
 
 <style scoped>
