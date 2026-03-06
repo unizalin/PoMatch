@@ -33,21 +33,27 @@
       <div class="form-row">
         <div class="form-field">
           <label class="field-label">邊框寬度</label>
-          <input
-            v-model.number="store.profile.themeConfig.profileBorderWidth"
-            type="number"
-            class="field-input"
-            placeholder="px"
-          />
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-border-all-variant</v-icon>
+            <input
+              v-model.number="store.profile.themeConfig.profileBorderWidth"
+              type="number"
+              class="field-input field-with-icon"
+              placeholder="px"
+            />
+          </div>
         </div>
         <div class="form-field">
           <label class="field-label">圓角百分比</label>
-          <input
-            v-model.number="store.profile.themeConfig.profileBorderRadius"
-            type="number"
-            class="field-input"
-            placeholder="%"
-          />
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-rounded-corner</v-icon>
+            <input
+              v-model.number="store.profile.themeConfig.profileBorderRadius"
+              type="number"
+              class="field-input field-with-icon"
+              placeholder="%"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -165,4 +171,8 @@ watch(() => config.value, (newVal) => {
   font-size: 14px; color: #0f172a; background: white; outline: none; transition: all 0.15s;
 }
 .field-input:focus { border-color: #1867c0; box-shadow: 0 0 0 3px rgba(24,103,192,0.1); }
+
+.field-input-wrap { position: relative; }
+.field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
+.field-with-icon { padding-left: 36px; }
 </style>

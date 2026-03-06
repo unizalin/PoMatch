@@ -4,11 +4,11 @@
       <v-col cols="12" sm="8" md="4">
         <v-card class="glass-card pa-8 text-center elevation-12">
           <div class="mb-6">
-            <h1 class="text-h4 font-weight-bold text-primary mb-2">歡迎回來</h1>
-            <p class="text-body-2 text-grey">登入您的 PoMatch 帳號</p>
+            <h1 class="text-h4 font-weight-bold text-primary mb-2">{{ isSignup ? '加入 PoMatch' : '歡迎回來' }}</h1>
+            <p class="text-body-2 text-grey">{{ isSignup ? '建立您的 PoMatch 帳號' : '登入您的 PoMatch 帳號' }}</p>
           </div>
 
-          <v-form @submit.prevent="handleLogin" v-model="isFormValid">
+          <v-form @submit.prevent="handleSubmit" v-model="isFormValid">
             <v-text-field
               v-model="email"
               label="電子郵件"
@@ -40,7 +40,7 @@
 
             <v-alert
               v-if="errorMsg"
-              type="error"
+              :type="alertType"
               variant="tonal"
               density="compact"
               class="mb-4 text-left"
@@ -60,8 +60,8 @@
               class="rounded-xl font-weight-bold mt-4 submit-btn gradient-btn"
               elevation="8"
             >
-              登入帳號
-              <v-icon end>mdi-login</v-icon>
+              {{ isSignup ? '註冊帳號' : '登入帳號' }}
+              <v-icon end>{{ isSignup ? 'mdi-account-plus' : 'mdi-login' }}</v-icon>
             </v-btn>
           </v-form>
 
@@ -105,8 +105,10 @@
           </v-btn>
 
           <div class="mt-8 text-body-2">
-            尚未有帳號？
-            <NuxtLink to="/register" class="text-primary font-weight-bold text-decoration-none">立即註冊</NuxtLink>
+            {{ isSignup ? '已經有帳號？' : '尚未有帳號？' }}
+            <a href="#" @click.prevent="isSignup = !isSignup" class="text-primary font-weight-bold text-decoration-none">
+              {{ isSignup ? '立即登入' : '立即註冊' }}
+            </a>
           </div>
         </v-card>
       </v-col>
@@ -120,7 +122,9 @@ import { useProfileStore } from '~/stores/profile'
 const client = useSupabaseClient()
 const store = useProfileStore()
 const router = useRouter()
+const route = useRoute()
 
+const isSignup = ref(route.query.mode === 'signup')
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -128,6 +132,7 @@ const isFormValid = ref(false)
 const loading = ref(false)
 const magicLoading = ref(false)
 const errorMsg = ref('')
+const alertType = ref('error')
 
 const emailRules = [
   v => !!v || '電子郵件為必填項目',
@@ -148,22 +153,44 @@ const checkProfileAndRedirect = async (userId) => {
   }
 }
 
-const handleLogin = async () => {
+const handleSubmit = async () => {
   if (!isFormValid.value) return
   
   loading.value = true
   errorMsg.value = ''
+  alertType.value = 'error'
   
-  const { data, error } = await client.auth.signInWithPassword({
-    email: email.value,
-    password: password.value,
-  })
+  if (isSignup.value) {
+    const { data, error } = await client.auth.signUp({
+      email: email.value,
+      password: password.value,
+    })
 
-  if (error) {
-    errorMsg.value = error.message === 'Invalid login credentials' ? '電子郵件或密碼錯誤' : error.message
-    loading.value = false
-  } else if (data.user) {
-    await checkProfileAndRedirect(data.user.id)
+    if (error) {
+      errorMsg.value = error.message
+      loading.value = false
+    } else if (data.user) {
+      // Check if email confirmation is required
+      if (data.session) {
+        await checkProfileAndRedirect(data.user.id)
+      } else {
+        errorMsg.value = '註冊成功！請檢查您的電子郵件以進行驗證。'
+        alertType.value = 'success'
+        loading.value = false
+      }
+    }
+  } else {
+    const { data, error } = await client.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    })
+
+    if (error) {
+      errorMsg.value = error.message === 'Invalid login credentials' ? '電子郵件或密碼錯誤' : error.message
+      loading.value = false
+    } else if (data.user) {
+      await checkProfileAndRedirect(data.user.id)
+    }
   }
 }
 

@@ -257,6 +257,15 @@ import BlockProductGrid from '~/components/profile/blocks/BlockProductGrid.vue'
 import BlockSchedule from '~/components/profile/blocks/BlockSchedule.vue'
 import BlockService from '~/components/profile/blocks/BlockService.vue'
 
+/**
+ * ── 同步與預覽規則 (Synchronization Rules) ──
+ * 1. 狀態來源：此頁面使用 useProfileStore 作為單一真理來源 (Single Source of Truth)。
+ * 2. 即時預覽：當在 Studio 管理介面修改主題、按鈕樣式或個人資訊時，Store 中的 profile 數據會同步更新。
+ * 3. 翻轉聯動：isFlipped 現在連結至 store.currentFlipSide，確保 Studio 預覽點擊翻轉時，
+ *    如果此頁面在同一個 Session (如 Iframe 或開發模式) 中開啟，兩邊會保持同步。
+ * 4. 數據持久化：Studio 的變更會透過 debouncedUpdateProfile 寫入資料庫，此頁面重新整理後會讀取最新狀態。
+ */
+
 const RESERVED_PATHS = ['confirm', 'login', 'register', 'explore', 'admin']
 definePageMeta({
   middleware: (to) => {
@@ -276,7 +285,12 @@ useSeoMeta({
   description: () => profile.value ? `我是 ${profile.value.name}，這是我在 PoMatch 的數位名片。` : 'PoMatch 數位名片'
 })
 
-const isFlipped = ref(false)
+const isFlipped = computed({
+  get: () => store.currentFlipSide === 'back',
+  set: (val: boolean) => {
+    store.currentFlipSide = val ? 'back' : 'front'
+  }
+})
 const isWalletMode = ref(false)
 const showQR = ref(false)
 const route = useRoute()

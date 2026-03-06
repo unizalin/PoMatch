@@ -19,12 +19,18 @@
       <!-- Content Editing -->
       <div class="style-section mb-4">
         <label class="style-label mb-2">連結名稱</label>
-        <input v-model="localLink.title" class="field-input" placeholder="例如: 我的 Instagram" />
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon">mdi-format-title</v-icon>
+          <input v-model="localLink.title" class="field-input field-with-icon" placeholder="例如: 我的 Instagram" />
+        </div>
       </div>
 
       <div class="style-section mb-6">
         <label class="style-label mb-2">連結網址</label>
-        <input v-model="localLink.url" class="field-input" placeholder="https://..." />
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon">mdi-link-variant</v-icon>
+          <input v-model="localLink.url" class="field-input field-with-icon" placeholder="https://..." />
+        </div>
       </div>
 
       <!-- Style Customization -->
@@ -158,7 +164,7 @@ const handleSave = async () => {
   
   if (!error) {
     // Update local store reactivity-safely
-    store.profile.actionLinks = store.profile.actionLinks.map(l => 
+    store.profile.actionLinks = store.profile.actionLinks.map((l: any) => 
       l.id === props.link.id 
         ? { ...l, title: localLink.value.title, url: localLink.value.url, metadata: metadata.value }
         : l
@@ -220,4 +226,8 @@ const handleSave = async () => {
   font-size: 14px; color: #0f172a; background: white; outline: none; transition: all 0.2s;
 }
 .field-input:focus { border-color: #1867c0; box-shadow: 0 0 0 4px rgba(24,103,192,0.1); }
+
+.field-input-wrap { position: relative; }
+.field-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
+.field-with-icon { padding-left: 44px !important; }
 </style>

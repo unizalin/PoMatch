@@ -1,134 +1,155 @@
 <template>
   <div class="creator-studio">
-    <v-row no-gutters class="studio-container">
-      <!-- 1. Studio Internal Sidebar (Navigation) -->
-      <v-col cols="12" md="8" order="1" order-md="1">
-        <!-- ── Refined Header ── -->
-        <div class="studio-header mb-8 px-4 py-6 rounded-xl glass-header">
-          <div class="d-flex flex-column">
-            <h2 class="text-h4 font-weight-black mb-1 gradient-text">創作者工作室</h2>
-            <p class="text-subtitle-2 text-grey-darken-1 mb-0 opacity-70">管理您的數位名片內容與視覺風格</p>
-          </div>
-          
-          <div class="d-flex align-center gap-3 mt-4 mt-sm-0">
-            <!-- 歷史紀錄群組 -->
-            <div class="history-controls d-flex align-center pa-1 rounded-lg">
-              <v-btn 
-                icon 
-                variant="text"
-                size="small" 
-                :disabled="!canUndo"
-                @click="handleUndo"
-                class="history-btn"
-              >
-                <v-icon size="20">mdi-undo</v-icon>
-                <v-tooltip activator="parent" location="bottom">復原 (Ctrl+Z)</v-tooltip>
-              </v-btn>
-              <div class="history-divider mx-1"></div>
-              <v-btn 
-                icon 
-                variant="text"
-                size="small" 
-                :disabled="!canRedo"
-                @click="handleRedo"
-                class="history-btn"
-              >
-                <v-icon size="20">mdi-redo</v-icon>
-                <v-tooltip activator="parent" location="bottom">重做 (Ctrl+Y)</v-tooltip>
-              </v-btn>
-            </div>
-
-            <!-- 儲存按鈕 -->
-            <v-btn
-              color="primary"
-              variant="flat"
-              rounded="pill"
-              class="save-trigger px-8"
-              height="48"
-              :elevation="isDirty ? 8 : 0"
-              :disabled="!isDirty || isSaving"
-              @click="handleSave"
-            >
-              <v-icon start size="20" class="mr-2">{{ isSaving ? 'mdi-loading mdi-spin' : 'mdi-cloud-upload-outline' }}</v-icon>
-              <span class="font-weight-black">{{ isSaving ? '同步中' : '發布變更' }}</span>
-              <v-badge
-                v-if="isDirty && !isSaving"
-                dot
-                color="amber-accent-4"
-                offset-x="-12"
-                offset-y="-12"
-                class="pulse-badge"
-              ></v-badge>
-            </v-btn>
-          </div>
+    <!-- 1. Global Studio Header (Sticky) -->
+    <div class="studio-global-header px-4 px-md-8 py-3 glass-header d-flex align-center justify-space-between sticky-top z-index-20">
+      <div class="d-flex align-center gap-3">
+        <h2 class="text-h5 text-md-h4 font-weight-black gradient-text mb-0">工作室</h2>
+        <v-chip size="small" variant="tonal" color="primary" class="font-weight-black d-none d-sm-flex">
+          {{ allItems.find(i => i.id === activeTab)?.label }}
+        </v-chip>
+      </div>
+      
+      <div class="d-flex align-center gap-2 gap-sm-4">
+        <!-- 歷史紀錄群組 (Superpowers) -->
+        <div class="history-controls d-flex align-center pa-1 rounded-lg">
+          <v-btn icon variant="text" size="small" :disabled="!canUndo" @click="handleUndo" class="history-btn">
+            <v-icon size="20">mdi-undo</v-icon>
+            <v-tooltip activator="parent" location="bottom">復原</v-tooltip>
+          </v-btn>
+          <div class="history-divider mx-1"></div>
+          <v-btn icon variant="text" size="small" :disabled="!canRedo" @click="handleRedo" class="history-btn">
+            <v-icon size="20">mdi-redo</v-icon>
+            <v-tooltip activator="parent" location="bottom">重做</v-tooltip>
+          </v-btn>
         </div>
 
-        <div class="studio-nav-container mb-6 overflow-x-auto">
-          <div class="studio-tabs">
-            <button
-              v-for="item in allItems"
-              :key="item.id"
-              class="studio-tab-item"
-              :class="{ active: activeTab === item.id }"
-              @click="activeTab = item.id"
-            >
-              <v-icon size="18" class="mr-2">{{ item.icon }}</v-icon>
-              <span>{{ item.label }}</span>
-              <div v-if="activeTab === item.id" class="active-indicator"></div>
-            </button>
-          </div>
-        </div>
-      </v-col>
+        <v-btn
+          color="primary"
+          variant="flat"
+          rounded="pill"
+          class="save-trigger px-4 px-sm-8"
+          :height="$vuetify.display.smAndDown ? 36 : 44"
+          :elevation="isDirty ? 8 : 0"
+          :disabled="!isDirty || isSaving"
+          @click="handleSave"
+        >
+          <v-icon :start="!$vuetify.display.xs" size="18">{{ isSaving ? 'mdi-loading mdi-spin' : 'mdi-cloud-upload-outline' }}</v-icon>
+          <span class="font-weight-black text-caption text-sm-body-2 d-none d-xs-inline">{{ isSaving ? '同步中' : '發布變更' }}</span>
+          <v-badge v-if="isDirty && !isSaving" dot color="amber-accent-4" offset-x="-6" offset-y="-6" class="pulse-badge"></v-badge>
+        </v-btn>
+      </div>
+    </div>
 
-      <!-- 2. Main Editor Area -->
-      <v-col cols="12" lg="8" class="studio-editor-section">
-        <v-row>
-          <v-col cols="12" md="7" lg="8" class="studio-editor-pane pa-6">
-            <transition name="fade-slide" mode="out-in">
-              <component :is="activeComponent" :key="activeTab" />
-            </transition>
-          </v-col>
+    <!-- 2. Mobile Quick Nav (Visible only on md and down) -->
+    <div class="d-lg-none studio-mobile-nav px-4 py-3 bg-white border-b overflow-x-auto">
+      <div class="d-flex gap-2">
+        <v-btn
+          v-for="item in allItems"
+          :key="item.id"
+          variant="tonal"
+          size="small"
+          rounded="lg"
+          :color="activeTab === item.id ? 'primary' : 'grey-darken-1'"
+          class="flex-shrink-0 font-weight-bold px-4"
+          @click="activeTab = item.id"
+        >
+          <v-icon start size="16">{{ item.icon }}</v-icon>
+          {{ item.label }}
+        </v-btn>
+      </div>
+    </div>
 
-          <!-- 3. Live Preview Area (Desktop Only) -->
-          <v-col cols="12" md="5" lg="4" class="studio-preview-pane py-6 pr-6 d-none d-md-block">
-            <div class="preview-sticky">
-              <div class="preview-card-wrap">
-                 <StudioPreview />
-              </div>
-              
-              <div class="preview-actions mt-6 px-4">
-                <v-btn
-                  block
-                  color="primary"
-                  rounded="xl"
-                  class="publish-btn font-weight-black"
-                  prepend-icon="mdi-rocket-launch"
-                  size="large"
-                  :href="`/${store.profile.username || ''}`"
-                  target="_blank"
-                >
-                  查看公開名片頁
-                </v-btn>
-              </div>
+    <!-- 3. Main Work Area -->
+    <div class="studio-container pa-4 pa-lg-8">
+      <v-row>
+        <!-- Sidebar (Desktop lg+) -->
+        <v-col cols="12" lg="3" xl="2" class="d-none d-lg-block">
+          <div class="studio-sidebar-card glass-card rounded-2xl pa-4 sticky-sidebar">
+            <div class="nav-group mb-6">
+              <div class="nav-group-title">內容管理</div>
+              <button
+                v-for="item in contentItems"
+                :key="item.id"
+                class="nav-item"
+                :class="{ active: activeTab === item.id }"
+                @click="activeTab = item.id"
+              >
+                <div class="nav-item-indicator" v-if="activeTab === item.id"></div>
+                <v-icon size="20" class="mr-3">{{ item.icon }}</v-icon>
+                <span>{{ item.label }}</span>
+              </button>
             </div>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
 
-    <!-- 4. Mobile Preview FAB (Visible on sm/md only) -->
-    <v-fab
+            <div class="nav-group">
+              <div class="nav-group-title">視覺風格</div>
+              <button
+                v-for="item in appearanceItems"
+                :key="item.id"
+                class="nav-item"
+                :class="{ active: activeTab === item.id }"
+                @click="activeTab = item.id"
+              >
+                <div class="nav-item-indicator" v-if="activeTab === item.id"></div>
+                <v-icon size="20" class="mr-3">{{ item.icon }}</v-icon>
+                <span>{{ item.label }}</span>
+              </button>
+            </div>
+          </div>
+        </v-col>
+
+        <!-- Editor & Preview -->
+        <v-col cols="12" lg="9" xl="10">
+          <v-row>
+            <!-- Editor Pane -->
+            <v-col cols="12" lg="7" xl="8">
+              <div class="studio-editor-card glass-card rounded-2xl pa-4 pa-md-6 pa-lg-8">
+                <transition name="fade-slide" mode="out-in">
+                  <component :is="activeComponent" :key="activeTab" />
+                </transition>
+              </div>
+            </v-col>
+
+            <!-- Preview Pane (Desktop lg+) -->
+            <v-col cols="12" lg="5" xl="4" class="d-none d-lg-block">
+              <div class="preview-sticky">
+                <div class="preview-card-wrap">
+                   <StudioPreview />
+                </div>
+                
+                <div class="preview-actions mt-8 px-4">
+                  <v-btn
+                    block
+                    color="primary"
+                    rounded="xl"
+                    elevation="8"
+                    class="publish-btn font-weight-black"
+                    prepend-icon="mdi-rocket-launch"
+                    size="large"
+                    :href="`/${store.profile.username || ''}`"
+                    target="_blank"
+                  >
+                    查看公開名片頁
+                  </v-btn>
+                </div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </div>
+
+    <!-- 4. Mobile Preview FAB (Visible on md and down) -->
+    <v-btn
       v-if="$vuetify.display.mdAndDown"
-      icon="mdi-cellphone-eye"
       color="primary"
-      location="bottom end"
+      elevation="8"
+      icon
       size="x-large"
       class="mobile-preview-fab"
       @click="mobilePreviewDialog = true"
     >
-      <v-icon size="28">mdi-cellphone-eye</v-icon>
-      <v-tooltip activator="parent" location="left">查看預覽</v-tooltip>
-    </v-fab>
+      <v-icon size="28">mdi-eye</v-icon>
+    </v-btn>
 
     <!-- 5. Mobile Preview Dialog -->
     <v-dialog
@@ -250,94 +271,33 @@ onUnmounted(() => {
 <style scoped>
 .creator-studio {
   min-height: calc(100vh - 64px);
-  background: #f8fafc;
+  background: #f1f5f9; /* Distinct light grey background to make cards pop */
 }
 
 .studio-container {
-  min-height: inherit;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
-/* ── UI 優化：Premium 樣式 ── */
+/* Base Card Style for Premium Look */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+/* Global Sticky Header */
+.sticky-top {
+  position: sticky;
+  top: 0;
+}
+.z-index-20 {
+  z-index: 20;
+}
 .glass-header {
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.studio-nav-container {
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
-}
-
-.studio-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 4px;
-  background: #f1f5f9;
-  border-radius: 16px;
-  width: fit-content;
-  min-width: 100%;
-}
-
-.studio-tab-item {
-  flex: 1;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #64748b;
-  background: transparent;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  cursor: pointer;
-  position: relative;
-}
-
-.studio-tab-item.active {
-  background: white;
-  color: #1867c0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.studio-editor-section {
-  background: white;
-  border-radius: 32px 0 0 0;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.02);
-}
-
-@media (max-width: 1264px) {
-  .studio-editor-section {
-    border-radius: 0;
-  }
-}
-
-.studio-editor-pane {
-  min-height: 600px;
-}
-
-.active-indicator {
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 3px;
-  background: #1867c0;
-  border-radius: 10px;
-  display: none; /* 使用 background 做區格即可 */
-}
-
-
-@media (max-width: 600px) {
-  .glass-header { flex-direction: column; align-items: flex-start; }
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .gradient-text {
@@ -346,8 +306,9 @@ onUnmounted(() => {
   -webkit-text-fill-color: transparent;
 }
 
+/* History Controls (Superpowers) */
 .history-controls {
-  background: #f1f5f9;
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
 }
 
@@ -366,6 +327,7 @@ onUnmounted(() => {
   background: #cbd5e1;
 }
 
+/* Save Trigger */
 .save-trigger {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -387,14 +349,24 @@ onUnmounted(() => {
   100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
 }
 
-.nav-group {
-  margin-bottom: 24px;
+/* Mobile Quick Nav */
+.studio-mobile-nav {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
-/* Sidebar */
-.studio-sidebar {
-  background: white;
-  border-right: 1px solid #f1f5f9;
+/* Sidebar CSS */
+.sticky-sidebar {
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.nav-group {
+  margin-bottom: 24px;
 }
 
 .nav-group-title {
@@ -411,22 +383,24 @@ onUnmounted(() => {
   width: 100%;
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  margin-bottom: 4px;
+  padding: 12px 16px;
+  margin-bottom: 6px;
   border-radius: 12px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #64748b;
   background: transparent;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border: none;
   text-align: left;
+  position: relative;
 }
 
 .nav-item:hover {
   background: #f8fafc;
   color: #0f172a;
+  transform: translateX(4px);
 }
 
 .nav-item.active {
@@ -434,21 +408,31 @@ onUnmounted(() => {
   color: #1867c0;
 }
 
-/* Editor */
-.studio-editor {
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
+.nav-item-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: #1867c0;
+  border-radius: 0 4px 4px 0;
 }
 
-/* Preview */
-.studio-preview {
+/* Editor CSS */
+.studio-editor-card {
+  min-height: calc(100vh - 140px);
+}
+
+/* Preview CSS */
+.studio-preview-pane {
   display: flex;
   flex-direction: column;
 }
 
 .preview-sticky {
   position: sticky;
-  top: 24px;
+  top: 100px;
 }
 
 .preview-card-wrap {
@@ -485,7 +469,9 @@ onUnmounted(() => {
   bottom: 32px !important;
   right: 24px !important;
   z-index: 100 !important;
-  box-shadow: 0 12px 24px rgba(24, 103, 192, 0.3) !important;
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
 }
 
 .mobile-preview-card {

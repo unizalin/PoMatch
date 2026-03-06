@@ -44,32 +44,41 @@
       <div class="form-row mt-4">
         <div class="form-field">
           <label class="field-label">顯示名稱</label>
-          <input
-            v-model="editedProfile.name"
-            class="field-input"
-            placeholder="輸入你的名稱或暱稱"
-          />
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-account-edit-outline</v-icon>
+            <input
+              v-model="editedProfile.name"
+              class="field-input field-with-icon"
+              placeholder="輸入你的名稱或暱稱"
+            />
+          </div>
         </div>
         <div class="form-field">
           <label class="field-label">頭像網址</label>
-          <input
-            ref="avatarFieldRef"
-            v-model="editedProfile.avatar"
-            class="field-input"
-            placeholder="https://..."
-          />
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-link-variant</v-icon>
+            <input
+              ref="avatarFieldRef"
+              v-model="editedProfile.avatar"
+              class="field-input field-with-icon"
+              placeholder="https://..."
+            />
+          </div>
         </div>
       </div>
 
       <div class="mt-3">
         <label class="field-label">個人簡介</label>
-        <textarea
-          v-model="editedProfile.description"
-          class="field-input field-textarea"
-          placeholder="用一句話介紹你自己，讓人印象深刻..."
-          rows="3"
-          maxlength="100"
-        ></textarea>
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon align-start mt-3">mdi-text-account</v-icon>
+          <textarea
+            v-model="editedProfile.description"
+            class="field-input field-textarea field-with-icon"
+            placeholder="用一句話介紹你自己，讓人印象深刻..."
+            rows="3"
+            maxlength="100"
+          ></textarea>
+        </div>
         <div class="field-counter">{{ (editedProfile.description || '').length }} / 100</div>
       </div>
     </div>
@@ -84,15 +93,21 @@
       <div class="form-row">
         <div class="form-field">
           <label class="field-label">MBTI 類型</label>
-          <select v-model="editedProfile.persona.mbti" class="field-input field-select">
-            <option v-for="m in mbtiOptions" :key="m" :value="m">{{ m }}</option>
-          </select>
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-card-account-details-outline</v-icon>
+            <select v-model="editedProfile.persona.mbti" class="field-input field-select field-with-icon">
+              <option v-for="m in mbtiOptions" :key="m" :value="m">{{ m }}</option>
+            </select>
+          </div>
         </div>
         <div class="form-field">
           <label class="field-label">星座</label>
-          <select v-model="editedProfile.persona.zodiac" class="field-input field-select">
-            <option v-for="z in zodiacOptions" :key="z" :value="z">{{ z }}</option>
-          </select>
+          <div class="field-input-wrap">
+            <v-icon size="16" class="field-icon">mdi-star-shooting-outline</v-icon>
+            <select v-model="editedProfile.persona.zodiac" class="field-input field-select field-with-icon">
+              <option v-for="z in zodiacOptions" :key="z" :value="z">{{ z }}</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -114,6 +129,7 @@
           <span class="field-badge">{{ (editedProfile.persona.tags || []).length }}/5</span>
         </label>
         <div class="tag-input-area">
+          <v-icon size="16" class="mr-2 opacity-40">mdi-tag-outline</v-icon>
           <span
             v-for="(tag, i) in editedProfile.persona.tags"
             :key="tag"

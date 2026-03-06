@@ -59,16 +59,24 @@
 
       <template v-slot:append>
         <div class="pa-4">
-          <div class="user-chip pa-3 mb-3 rounded-xl d-flex align-center" style="gap:10px;background:#f8fafc;border:1px solid #f1f5f9">
+          <div class="user-chip pa-2 rounded-xl d-flex align-center" style="gap:8px;background:#f8fafc;border:1px solid #f1f5f9">
             <v-avatar size="32" color="primary" style="flex-shrink:0">
               <span class="text-caption font-weight-black text-white">{{ userInitial }}</span>
             </v-avatar>
-            <div class="text-subtitle-2 font-weight-bold text-truncate" style="overflow:hidden">{{ userEmail }}</div>
+            <div class="flex-grow-1 min-width-0">
+              <div class="text-caption font-weight-bold text-truncate" style="color:#0f172a">{{ userEmail }}</div>
+            </div>
+            <v-btn 
+              icon="mdi-logout-variant" 
+              variant="text" 
+              color="error" 
+              size="small" 
+              density="comfortable" 
+              @click="handleLogout"
+            >
+              <v-tooltip activator="parent" location="top">登出</v-tooltip>
+            </v-btn>
           </div>
-          <v-btn block variant="text" color="error" prepend-icon="mdi-logout"
-            rounded="lg" class="text-caption" @click="handleLogout">
-            登出
-          </v-btn>
         </div>
       </template>
     </v-navigation-drawer>

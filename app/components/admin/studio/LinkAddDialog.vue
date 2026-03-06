@@ -28,28 +28,37 @@
       
       <div class="form-field mb-4">
         <label class="field-label">區塊標題</label>
-        <input
-          v-model="newLink.title"
-          class="field-input"
-          :placeholder="getBlockPlaceholder()"
-        />
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon">mdi-format-title</v-icon>
+          <input
+            v-model="newLink.title"
+            class="field-input field-with-icon"
+            :placeholder="getBlockPlaceholder()"
+          />
+        </div>
       </div>
 
       <div v-if="(newLink.metadata?.block_type || 'standard_link') === 'standard_link'" class="form-field mb-4">
         <label class="field-label">連結網址</label>
-        <input
-          v-model="newLink.url"
-          class="field-input"
-          placeholder="https://..."
-          @input="detectFromUrl"
-        />
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon">mdi-link-variant</v-icon>
+          <input
+            v-model="newLink.url"
+            class="field-input field-with-icon"
+            placeholder="https://..."
+            @input="detectFromUrl"
+          />
+        </div>
       </div>
 
       <div class="form-field mb-8">
         <label class="field-label">呈現圖示</label>
-        <select v-model="newLink.icon" class="field-input field-select">
-          <option v-for="opt in iconOptions" :key="opt.value" :value="opt.value">{{ opt.title }}</option>
-        </select>
+        <div class="field-input-wrap">
+          <v-icon size="16" class="field-icon">mdi-shape-outline</v-icon>
+          <select v-model="newLink.icon" class="field-input field-select field-with-icon">
+            <option v-for="opt in iconOptions" :key="opt.value" :value="opt.value">{{ opt.title }}</option>
+          </select>
+        </div>
       </div>
       
       <div class="d-flex gap-3">
@@ -178,6 +187,10 @@ const handleAdd = async () => {
 }
 .field-input:focus { border-color: #1867c0; box-shadow: 0 0 0 4px rgba(24,103,192,0.1); }
 .field-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+.field-input-wrap { position: relative; }
+.field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); opacity: 0.4; pointer-events: none; }
+.field-with-icon { padding-left: 40px !important; }
 
 .active-type {
   border: 2px solid #1867c0 !important;
