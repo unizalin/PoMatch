@@ -162,6 +162,9 @@
         </div>
       </v-card>
     </v-dialog>
+
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -240,10 +243,6 @@ watch(activeTab, (tab) => {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
-  const username = user.value?.email?.split('@')[0]
-  if (username) {
-    await store.fetchProfile(username)
-  }
 })
 
 onUnmounted(() => {

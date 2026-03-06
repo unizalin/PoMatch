@@ -99,7 +99,8 @@ export const useProfileStore = defineStore('profile', {
         // ── 歷史紀錄系統 ──
         historyStack: [] as string[],
         historyIndex: -1,
-        isDirty: false
+        isDirty: false,
+        hasCheckedProfile: false // 避免在 middleware 中重複檢查
     }),
 
     getters: {
@@ -164,14 +165,19 @@ export const useProfileStore = defineStore('profile', {
             this.isDirty = true
         },
 
-        async fetchProfile(username: string) {
+        async fetchProfile(identifier: string, isById: boolean = false) {
             this.loading = true
             const client = useSupabaseClient<Database>()
             try {
-                const { data, error } = await client
-                    .from('profiles')
-                    .select('*, links(*)')
-                    .eq('username', username)
+                let query = client.from('profiles').select('*, links(*)')
+
+                if (isById) {
+                    query = query.eq('id', identifier)
+                } else {
+                    query = query.eq('username', identifier)
+                }
+
+                const { data, error } = await query
                     .order('sort_order', { foreignTable: 'links', ascending: true })
                     .maybeSingle()
 
@@ -186,6 +192,7 @@ export const useProfileStore = defineStore('profile', {
                     this.historyStack = [JSON.stringify({ profile: this.profile })]
                     this.historyIndex = 0
                     this.isDirty = false
+                    this.hasCheckedProfile = true
                 }
                 return { data, error }
             } finally {
@@ -369,9 +376,14 @@ export const useProfileStore = defineStore('profile', {
             return !data && !error
         },
         async hasProfile(userId: string) {
+            if (this.hasCheckedProfile) return true
             const client = useSupabaseClient<Database>()
             const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle()
-            return !!data
+            if (data) {
+                this.hasCheckedProfile = true
+                return true
+            }
+            return false
         },
         async handleRegister(id: string) {
             const client = useSupabaseClient<Database>()

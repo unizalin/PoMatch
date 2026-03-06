@@ -165,6 +165,14 @@
         </div>
       </div>
     </v-main>
+    
+    <!-- Loading Overlay -->
+    <v-overlay :model-value="!store.hasCheckedProfile && store.loading" class="align-center justify-center" persistent>
+      <div class="d-flex flex-column align-center">
+        <v-progress-circular indeterminate color="primary" size="64" width="6"></v-progress-circular>
+        <div class="mt-4 text-h6 font-weight-black text-white">初始化資料中...</div>
+      </div>
+    </v-overlay>
   </v-app>
 </template>
 
@@ -188,6 +196,19 @@ const handleLogout = async () => {
   await client.auth.signOut()
   router.push('/login')
 }
+
+// ── Profile Initialization ──
+onMounted(async () => {
+  if (user.value?.id && !store.hasCheckedProfile) {
+    await store.fetchProfile(user.value.id, true)
+  }
+})
+
+watch(user, async (newUser) => {
+  if (newUser?.id && !store.hasCheckedProfile) {
+    await store.fetchProfile(newUser.id, true)
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
